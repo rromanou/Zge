@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" translate="no">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="google" content="notranslate">
 <title>Zge</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;border-radius:0}
@@ -14,26 +15,34 @@ input{width:100%;outline:none}
 input:focus{border-color:#000}
 button{cursor:pointer}
 button:hover{background:#eee}
-#auth,#made{height:100%;display:flex;flex-direction:column;justify-content:center;gap:8px;max-width:320px;margin:0 auto;padding:16px}
-#auth form{display:flex;flex-direction:column;gap:8px}
-#auth .row{display:flex;gap:8px}
-#auth .row button{flex:1}
-#err{color:#555;min-height:1.4em}
-#made b{font-size:22px;font-weight:normal;letter-spacing:1px}
-#app{height:100%;display:grid;grid-template-columns:240px 1fr}
+.v{height:100%;display:flex;flex-direction:column;justify-content:center;gap:8px;max-width:320px;margin:0 auto;padding:16px}
+.v form{display:flex;flex-direction:column;gap:8px}
+.v .t{font-size:22px;font-weight:normal;letter-spacing:1px}
+.v .n{font-size:22px;letter-spacing:1px}
+.err{color:#555;min-height:1.4em}
+.sub{color:#555}
+#app{height:100%;display:grid;grid-template-columns:260px 1fr}
 aside{border-right:1px solid #999;display:flex;flex-direction:column;min-height:0}
 aside header,#conv header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px;border-bottom:1px solid #999}
 aside header button,#conv header button{padding:4px 10px}
+#menu{display:flex;flex-direction:column;border-bottom:1px solid #999}
+#menu button{border:0;border-bottom:1px solid #ddd;text-align:left}
+#menu button:last-child{border-bottom:0}
 #nf{display:flex;gap:4px;padding:8px;border-bottom:1px solid #999}
 #nf button{width:42px}
+#note{padding:0 8px;color:#555;min-height:1.4em}
 #list{list-style:none;overflow:auto;flex:1}
-#list li{padding:10px 8px;border-bottom:1px solid #ddd;cursor:pointer}
+#list li{padding:10px 8px;border-bottom:1px solid #ddd;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #list li:hover{background:#f2f2f2}
 #list li.on{background:#000;color:#fff}
 #conv{display:flex;flex-direction:column;min-height:0}
+#who{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
 .m{max-width:75%;padding:6px 10px;border:1px solid #999;align-self:flex-start;white-space:pre-wrap;word-break:break-word}
 .m.me{align-self:flex-end;background:#000;color:#fff;border-color:#000}
+.m .s{color:#777;font-size:12px}
+.m img,.m video{display:block;max-width:100%;max-height:300px}
+.m .dl{color:#000}
 #sf{display:flex;gap:4px;padding:8px;border-top:1px solid #999}
 #sf button{width:48px}
 #back{display:none}
@@ -47,42 +56,79 @@ aside header button,#conv header button{padding:4px 10px}
 </head>
 <body>
 
-<main id="auth" hidden>
- <form id="f">
-  <input id="n" placeholder="+000000000" inputmode="numeric" autocomplete="username">
-  <input id="p" type="password" maxlength="40" placeholder="mot de passe" autocomplete="current-password">
-  <div class="row"><button id="in">Entrer</button><button id="up" type="button">Créer</button></div>
-  <div id="err"></div>
+<main id="home" class="v" hidden>
+ <b class="t">Zge</b>
+ <button id="g-up">Créer un compte</button>
+ <button id="g-in">Connexion</button>
+</main>
+
+<main id="signup" class="v" hidden>
+ <form id="fu">
+  <input id="p1" type="password" maxlength="40" placeholder="mot de passe (20 à 40 caractères)" autocomplete="new-password">
+  <input id="p2" type="password" maxlength="40" placeholder="répéter le mot de passe" autocomplete="new-password">
+  <button>Créer</button>
+  <div class="err"></div>
+  <button type="button" class="bk">←</button>
  </form>
 </main>
 
-<main id="made" hidden>
- <b id="mn"></b>
+<main id="login" class="v" hidden>
+ <form id="fl">
+  <input id="n" placeholder="+000000000" inputmode="numeric" autocomplete="username">
+  <input id="p" type="password" maxlength="40" placeholder="mot de passe" autocomplete="current-password">
+  <button>Entrer</button>
+  <div class="err"></div>
+  <button type="button" class="bk">←</button>
+ </form>
+</main>
+
+<main id="made" class="v" hidden>
+ <span class="sub">Votre numéro</span>
+ <b class="n" id="mn"></b>
+ <span class="sub">Notez-le. Il ne peut pas être récupéré.</span>
  <button id="ok">OK</button>
 </main>
 
 <main id="app" hidden>
  <aside>
-  <header><span id="me"></span><button id="out">×</button></header>
-  <form id="nf"><input id="no" placeholder="+000000000" inputmode="numeric" autocomplete="off"><button>+</button></form>
+  <header><span id="me"></span><button id="mb">⋯</button></header>
+  <div id="menu" hidden>
+   <button id="m-cache">Vider le cache</button>
+   <button id="m-dev">Effacer l'appareil</button>
+   <button id="m-acc">Supprimer le compte</button>
+   <button id="m-out">Déconnexion</button>
+  </div>
+  <form id="nf"><input id="no" placeholder="+000000000 +000000000" autocomplete="off"><button>+</button></form>
+  <div id="note"></div>
   <ul id="list"></ul>
  </aside>
  <section id="conv">
-  <header><button id="back">←</button><span id="who"></span><span></span></header>
+  <header>
+   <button id="back">←</button><span id="who"></span>
+   <span><button id="clr">Vider</button> <button id="rm">Supprimer</button></span>
+  </header>
   <div id="msgs"></div>
-  <form id="sf"><input id="tx" maxlength="2000" autocomplete="off"><button>→</button></form>
+  <form id="sf">
+   <button type="button" id="att">+</button>
+   <input id="tx" maxlength="2000" autocomplete="off">
+   <button id="go">→</button>
+   <input id="fi" type="file" multiple hidden>
+  </form>
  </section>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL='https://taewxhmkivlmromyeslx.supabase.co';
-const SUPABASE_KEY='sb_publishable_Q2ixADbOElHtMihV4AxI8w_X93EfSEO';
+const SUPABASE_URL='https://VOTRE-PROJET.supabase.co';
+const SUPABASE_KEY='VOTRE_CLE_ANON';
 
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=s=>document.querySelector(s);
 const enc=new TextEncoder(),dec=new TextDecoder();
 const DOMAIN='@zge.local';
+const CH=256*1024;            // taille d'un morceau de fichier
+const MAX=10*1024*1024;       // taille max d'un fichier
+const IMG=/^image\/(jpeg|png|gif|webp)$/,VID=/^video\/(mp4|webm|ogg|quicktime)$/;
 
 /* ---------- outils ---------- */
 const b64=b=>{let s='';new Uint8Array(b).forEach(x=>s+=String.fromCharCode(x));return btoa(s)};
@@ -92,13 +138,37 @@ const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
 const digits=s=>String(s).replace(/\D/g,'');
 const LS={
  get:(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch{return d}},
- set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
+ set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 };
 function rand9(){
  const a=new Uint32Array(1);
  do{crypto.getRandomValues(a)}while(a[0]>=4000000000);
  return String(a[0]%1000000000).padStart(9,'0');
 }
+const safeMime=m=>IMG.test(m)||VID.test(m)?m:'application/octet-stream';
+const cleanName=n=>String(n||'fichier').slice(0,120).replace(/[\\\/\0]/g,'_');
+const fmt=n=>n>1e6?(n/1e6).toFixed(1)+' Mo':Math.max(1,Math.ceil(n/1e3))+' Ko';
+
+/* ---------- stockage local des fichiers (IndexedDB) ---------- */
+let dbp;
+const db=()=>dbp||(dbp=new Promise((res,rej)=>{
+ const r=indexedDB.open('zge',1);
+ r.onupgradeneeded=()=>{r.result.createObjectStore('files');r.result.createObjectStore('chunks')};
+ r.onsuccess=()=>res(r.result);
+ r.onerror=()=>rej(r.error);
+}));
+const idb=async(store,mode,fn)=>{
+ const d=await db();
+ return new Promise((res,rej)=>{
+  const t=d.transaction(store,mode),r=fn(t.objectStore(store));
+  t.oncomplete=()=>res(r&&r.result);
+  t.onerror=t.onabort=()=>rej(t.error);
+ });
+};
+const put=(st,k,v)=>idb(st,'readwrite',s=>s.put(v,k));
+const get=(st,k)=>idb(st,'readonly',s=>s.get(k));
+const del=(st,k)=>idb(st,'readwrite',s=>s.delete(k));
+const delRange=(st,p)=>idb(st,'readwrite',s=>s.delete(IDBKeyRange.bound(p,p+'\uffff')));
 
 /* ---------- chiffrement ---------- */
 const ECDH={name:'ECDH',namedCurve:'P-256'};
@@ -116,18 +186,19 @@ async function seal(key,bytes,aad){
  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(aad)},key,bytes);
  return{iv:b64(iv),data:b64(ct)};
 }
-async function unseal(key,o,aad){
- return crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv),additionalData:enc.encode(aad)},key,unb64(o.data));
-}
+const unseal=(key,o,aad)=>crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv),additionalData:enc.encode(aad)},key,unb64(o.data));
 
 /* ---------- état local ---------- */
-let me=null,ident=null,chats=[],cur=null,busy=false,again=false;
-const unread=new Set(),keyCache=new Map();
+let me=null,ident=null,chats=[],cur=null,busy=false,again=false,entered=false,sending=false,sig='',stick=true,nt;
+const unread=new Set(),keyCache=new Map(),urls=new Map();
 const kk=s=>'zge:'+me+':'+s;
 const keys=()=>LS.get(kk('k'),{});
 const setKey=(id,raw)=>{const k=keys();k[id]=raw;LS.set(kk('k'),k)};
 const msgs=id=>LS.get(kk('m:'+id),[]);
 const setMsgs=(id,l)=>LS.set(kk('m:'+id),l);
+const others=c=>c.members.filter(x=>x!==me);
+const label=c=>others(c).map(x=>'+'+x).join(' ');
+const note=t=>{$('#note').textContent=t;clearTimeout(nt);nt=setTimeout(()=>$('#note').textContent='',3000)};
 async function chatKey(id){
  if(keyCache.has(id))return keyCache.get(id);
  const raw=keys()[id];
@@ -136,22 +207,42 @@ async function chatKey(id){
  keyCache.set(id,k);
  return k;
 }
+function revokeUrls(prefix){
+ for(const[k,u]of urls)if(!prefix||k.startsWith(prefix)){URL.revokeObjectURL(u);urls.delete(k)}
+}
+async function wipeChat(id,dropKey){
+ try{localStorage.removeItem(kk('m:'+id))}catch{}
+ try{await delRange('files',me+':'+id+':');await delRange('chunks',me+':'+id+':')}catch{}
+ revokeUrls(id+':');
+ if(dropKey){const k=keys();delete k[id];LS.set(kk('k'),k);keyCache.delete(id)}
+ unread.delete(id);
+ sig='';
+}
+async function wipeAll(withKeys){
+ for(const k of Object.keys(localStorage))
+  if(k.startsWith(kk(withKeys?'':'m:')))localStorage.removeItem(k);
+ try{await delRange('files',me+':');await delRange('chunks',me+':')}catch{}
+ revokeUrls();
+ sig='';
+}
 
-/* ---------- compte ---------- */
-const show=id=>{for(const x of['auth','made','app'])$('#'+x).hidden=x!==id};
-const err=t=>$('#err').textContent=t||'';
+/* ---------- écrans et compte ---------- */
+const VIEWS=['home','signup','login','made','app'];
+const show=id=>{for(const x of VIEWS)$('#'+x).hidden=x!==id;err('')};
+const err=t=>document.querySelectorAll('.err').forEach(e=>e.textContent=t||'');
 const pwOk=p=>p.length>=20&&p.length<=40;
 
 async function signup(){
- const p=$('#p').value;
- if(!pwOk(p))return err('20–40');
+ const p=$('#p1').value;
+ if(!pwOk(p))return err('Mot de passe : 20 à 40 caractères');
+ if(p!==$('#p2').value)return err('Les mots de passe sont différents');
  err('');
  try{
   for(let i=0;i<6;i++){
    const id=rand9();
    const{data,error}=await sb.auth.signUp({email:id+DOMAIN,password:p});
    if(error){if(/registered|exists/i.test(error.message))continue;throw error}
-   if(!data.session)return err('Confirmation email active');
+   if(!data.session)return err('Erreur : confirmation email active');
    me=id;
    ident=await newIdentity();
    LS.set(kk('id'),ident);
@@ -162,17 +253,19 @@ async function signup(){
    return;
   }
   err('Erreur');
- }catch(e){err('Erreur')}
+ }catch{err('Erreur')}
 }
 async function login(){
  const id=digits($('#n').value),p=$('#p').value;
- if(id.length!==9||!pwOk(p))return err('Erreur');
+ if(id.length!==9||!pwOk(p))return err('Numéro ou mot de passe incorrect');
  err('');
  const{error}=await sb.auth.signInWithPassword({email:id+DOMAIN,password:p});
- if(error)return err('Erreur');
+ if(error)return err('Numéro ou mot de passe incorrect');
  enter(id);
 }
 async function enter(id){
+ if(entered)return;
+ entered=true;
  me=id;
  ident=LS.get(kk('id'),null);
  if(!ident){
@@ -183,22 +276,64 @@ async function enter(id){
  $('#me').textContent='+'+me;
  show('app');
  await sync();
- const ch=sb.channel('z');
- ch.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'to_id=eq.'+me},sync)
-   .on('postgres_changes',{event:'INSERT',schema:'public',table:'key_offers',filter:'to_id=eq.'+me},sync)
-   .on('postgres_changes',{event:'INSERT',schema:'public',table:'chats'},sync)
-   .subscribe();
+ sb.channel('z')
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'to_id=eq.'+me},sync)
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'key_offers',filter:'to_id=eq.'+me},sync)
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'notices',filter:'to_id=eq.'+me},sync)
+  .on('postgres_changes',{event:'*',schema:'public',table:'chats'},sync)
+  .subscribe();
  setInterval(sync,8000);
+}
+async function leaveDevice(){
+ try{await sb.auth.signOut({scope:'local'})}catch{}
+ location.reload();
 }
 
 /* ---------- synchronisation ---------- */
+async function applyNotice(n){
+ if(!/^[0-9a-f]{64}$/.test(n.chat_id))return;
+ if(n.kind==='clear')await wipeChat(n.chat_id,false);
+ else if(n.kind==='del'){
+  await wipeChat(n.chat_id,true);
+  chats=chats.filter(c=>c.id!==n.chat_id);
+  if(cur===n.chat_id)closeChat();
+ }else if(n.kind==='purge'&&/^\d{9}$/.test(n.who||'')){
+  const l=msgs(n.chat_id);
+  for(const e of l)if(e.f===n.who&&e.fid){try{await del('files',me+':'+n.chat_id+':'+e.fid)}catch{}}
+  revokeUrls(n.chat_id+':');
+  setMsgs(n.chat_id,l.filter(e=>e.f!==n.who));
+  sig='';
+ }
+}
+async function receiveFile(m,p){
+ if(!/^[0-9a-f]{16}$/.test(p.fid)||!(p.n>=1&&p.n<=100))return null;
+ const base=me+':'+m.chat_id+':'+p.fid;
+ const mime=safeMime(String(p.mime||'')),name=cleanName(p.name);
+ const e={sid:m.id,f:m.from_id,k:'f',fid:p.fid,name,mime,size:Number(p.size)||0,ts:Number(p.ts)||0};
+ const parts=[];
+ for(let i=0;i<p.n;i++){
+  const b=await get('chunks',base+':'+i);
+  if(!b){e.x=1;return e}
+  parts.push(b);
+ }
+ await put('files',base,{blob:new Blob(parts,{type:mime}),name,mime,size:e.size});
+ for(let i=0;i<p.n;i++)await del('chunks',base+':'+i);
+ return e;
+}
 async function sync(){
  if(!me)return;
  if(busy){again=true;return}
  busy=true;
  try{
   const{data:cs}=await sb.from('chats').select('id,members');
-  chats=(cs||[]).map(c=>({id:c.id,other:c.members.find(x=>x!==me)||me}));
+  if(cs)chats=cs.map(c=>({id:c.id,members:c.members}));
+
+  // ordres de nettoyage (vider / supprimer)
+  const{data:ns}=await sb.from('notices').select('*').eq('to_id',me).order('id');
+  if(ns&&ns.length){
+   for(const n of ns){try{await applyNotice(n)}catch{}}
+   await sb.from('notices').delete().in('id',ns.map(n=>n.id));
+  }
 
   // clés de conversation reçues : déchiffrées ici, puis retirées du serveur
   const{data:os}=await sb.from('key_offers').select('*').eq('to_id',me);
@@ -214,71 +349,186 @@ async function sync(){
   }
 
   // messages reçus : déchiffrés ici, stockés en local, puis retirés du serveur
-  const{data:ms}=await sb.from('messages').select('*').eq('to_id',me).order('id');
-  for(const m of ms||[]){
-   const k=await chatKey(m.chat_id);
-   if(!k)continue;
-   let p=null;
-   try{p=JSON.parse(dec.decode(await unseal(k,m,m.chat_id)))}catch{}
-   if(p){
-    const l=msgs(m.chat_id);
-    if(!l.some(x=>x.sid===m.id)){
-     l.push({sid:m.id,f:m.from_id,t:String(p.t),ts:Number(p.ts)||0});
-     l.sort((a,b)=>a.ts-b.ts);
-     setMsgs(m.chat_id,l);
-     if(m.chat_id!==cur)unread.add(m.chat_id);
-    }
+  let last=0;
+  for(;;){
+   const{data:ms}=await sb.from('messages').select('*').eq('to_id',me).gt('id',last).order('id').limit(40);
+   if(!ms||!ms.length)break;
+   const done=[];
+   for(const m of ms){
+    last=m.id;
+    const k=await chatKey(m.chat_id);
+    if(!k)continue;
+    try{
+     if(m.fid){
+      if(!Number.isInteger(m.idx)||m.idx<0||m.idx>=100){done.push(m.id);continue}
+      let buf=null;
+      try{buf=await unseal(k,m,m.chat_id+':'+m.fid+':'+m.idx)}catch{}
+      if(buf)await put('chunks',me+':'+m.chat_id+':'+m.fid+':'+m.idx,buf);
+      done.push(m.id);
+      continue;
+     }
+     let p=null;
+     try{p=JSON.parse(dec.decode(await unseal(k,m,m.chat_id)))}catch{}
+     if(p){
+      const l=msgs(m.chat_id);
+      if(!l.some(x=>x.sid===m.id)){
+       let e=null;
+       if(p.k==='f')e=await receiveFile(m,p);
+       else if(typeof p.t==='string')e={sid:m.id,f:m.from_id,k:'t',t:p.t,ts:Number(p.ts)||0};
+       if(e){
+        l.push(e);
+        l.sort((a,b)=>a.ts-b.ts);
+        setMsgs(m.chat_id,l);
+        if(m.chat_id!==cur)unread.add(m.chat_id);
+       }
+      }
+     }
+     done.push(m.id);
+    }catch{}
    }
-   await sb.from('messages').delete().eq('id',m.id);
+   if(done.length)await sb.from('messages').delete().in('id',done);
+   if(ms.length<40)break;
   }
  }catch{}
  busy=false;
  renderList();
- if(cur)renderMsgs();
+ refreshInput();
+ renderMsgs();
  if(again){again=false;sync()}
 }
 
-/* ---------- actions ---------- */
+/* ---------- envoi ---------- */
+async function post(c,p){
+ const k=await chatKey(c.id);
+ if(!k)return false;
+ const s=await seal(k,enc.encode(JSON.stringify(p)),c.id);
+ const r=await sb.from('messages').insert(others(c).map(o=>({chat_id:c.id,from_id:me,to_id:o,iv:s.iv,data:s.data})));
+ return !r.error;
+}
+async function sendText(t){
+ const c=chats.find(x=>x.id===cur);
+ if(!c||!t)return;
+ const ts=Date.now();
+ if(!await post(c,{k:'t',t,ts})){sync();return note('Erreur')}
+ const l=msgs(c.id);
+ l.push({sid:'l'+hex(rnd(6)),f:me,k:'t',t,ts});
+ setMsgs(c.id,l);
+ renderMsgs();
+}
+async function shrink(f){
+ const bmp=await createImageBitmap(f);
+ const r=Math.min(1,1280/Math.max(bmp.width,bmp.height));
+ const c=document.createElement('canvas');
+ c.width=Math.max(1,Math.round(bmp.width*r));
+ c.height=Math.max(1,Math.round(bmp.height*r));
+ const x=c.getContext('2d');
+ x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+ x.drawImage(bmp,0,0,c.width,c.height);
+ return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(),'image/jpeg',0.8));
+}
+async function sendFile(c,f){
+ if(f.size>MAX)return note('10 Mo max');
+ const k=await chatKey(c.id);
+ if(!k)return;
+ let blob=f,name=f.name||'fichier',mime=f.type||'';
+ if(/^image\/(jpeg|png|webp|bmp)$/.test(mime)){
+  try{blob=await shrink(f);mime='image/jpeg';name=name.replace(/\.[^.]*$/,'')+'.jpg'}catch{}
+ }
+ if(blob.size>MAX)return note('10 Mo max');
+ mime=safeMime(mime);name=cleanName(name);
+ const buf=await blob.arrayBuffer(),rec=others(c);
+ const n=Math.max(1,Math.ceil(buf.byteLength/CH)),fid=hex(rnd(8));
+ let ok=true;
+ for(let i=0;i<n&&ok;i+=4){
+  await Promise.all([0,1,2,3].filter(j=>i+j<n).map(async j=>{
+   const idx=i+j;
+   const s=await seal(k,buf.slice(idx*CH,(idx+1)*CH),c.id+':'+fid+':'+idx);
+   const r=await sb.from('messages').insert(rec.map(o=>({chat_id:c.id,from_id:me,to_id:o,iv:s.iv,data:s.data,fid,idx,n})));
+   if(r.error)ok=false;
+  }));
+  $('#tx').placeholder=Math.min(i+4,n)+'/'+n;
+ }
+ if(!ok)return note('Erreur');
+ const ts=Date.now();
+ if(!await post(c,{k:'f',fid,name,mime,size:blob.size,n,ts}))return note('Erreur');
+ await put('files',me+':'+c.id+':'+fid,{blob:new Blob([buf],{type:mime}),name,mime,size:blob.size});
+ const l=msgs(c.id);
+ l.push({sid:'l'+hex(rnd(6)),f:me,k:'f',fid,name,mime,size:blob.size,ts});
+ setMsgs(c.id,l);
+ renderMsgs();
+}
+async function sendFiles(list){
+ const c=chats.find(x=>x.id===cur);
+ if(!c||sending)return;
+ sending=true;
+ try{for(const f of list)await sendFile(c,f)}catch{note('Erreur')}
+ sending=false;
+ $('#tx').placeholder='';
+}
+
+/* ---------- conversations ---------- */
 async function start(raw){
- const o=digits(raw);
- if(o.length!==9||o===me)return;
- const ex=chats.find(c=>c.other===o);
- if(ex)return open(ex.id);
- const{data:p}=await sb.from('profiles').select('pub').eq('id',o).maybeSingle();
- if(!p)return;
+ const ids=[...new Set(raw.match(/\d{9}/g)||[])].filter(x=>x!==me);
+ if(!ids.length||ids.length>20)return note('Erreur');
+ const same=chats.find(c=>c.members.length===ids.length+1&&ids.every(i=>c.members.includes(i)));
+ if(same)return open(same.id);
+ const{data:ps}=await sb.from('profiles').select('id,pub').in('id',ids);
+ if(!ps||ps.length!==ids.length)return note('Introuvable');
  const id=hex(rnd(32)),raw32=rnd(32);
- let r=await sb.from('chats').insert({id,members:[me,o]});
- if(r.error)return;
- const sh=await shared(ident.priv,p.pub);
- const w=await seal(sh,raw32,id);
- r=await sb.from('key_offers').insert({chat_id:id,to_id:o,from_id:me,iv:w.iv,data:w.data});
- if(r.error)return;
+ let r=await sb.from('chats').insert({id,members:[me,...ids]});
+ if(r.error)return note('Erreur');
+ const offers=[];
+ for(const p of ps){
+  const sh=await shared(ident.priv,p.pub);
+  const w=await seal(sh,raw32,id);
+  offers.push({chat_id:id,to_id:p.id,from_id:me,iv:w.iv,data:w.data});
+ }
+ r=await sb.from('key_offers').insert(offers);
+ if(r.error)return note('Erreur');
  setKey(id,b64(raw32));
  await sync();
  open(id);
 }
-async function send(t){
- const c=chats.find(x=>x.id===cur);
- const k=c&&await chatKey(c.id);
- if(!k||!t)return;
- const ts=Date.now();
- const s=await seal(k,enc.encode(JSON.stringify({t,ts})),c.id);
- const r=await sb.from('messages').insert({chat_id:c.id,from_id:me,to_id:c.other,iv:s.iv,data:s.data});
- if(r.error)return;
- const l=msgs(c.id);
- l.push({sid:'l'+hex(rnd(6)),f:me,t,ts});
- setMsgs(c.id,l);
- renderMsgs();
-}
 function open(id){
  cur=id;
  unread.delete(id);
+ sig='';
  $('#app').classList.add('open');
  const c=chats.find(x=>x.id===id);
- $('#who').textContent=c?'+'+c.other:'';
+ $('#who').textContent=c?label(c):'';
+ refreshInput();
  renderList();
  renderMsgs();
  $('#tx').focus();
+}
+function closeChat(){
+ cur=null;sig='';
+ $('#app').classList.remove('open');
+ renderList();
+}
+function refreshInput(){
+ const on=!!(cur&&keys()[cur]);
+ $('#tx').disabled=!on;
+ $('#att').disabled=!on;
+ $('#go').disabled=!on;
+}
+async function clearChat(){
+ const c=chats.find(x=>x.id===cur);
+ if(!c||!confirm('Vider cette discussion pour tous ?'))return;
+ const{error}=await sb.rpc('clear_chat',{p_chat:c.id});
+ if(error)return note('Erreur');
+ await wipeChat(c.id,false);
+ renderMsgs();
+}
+async function removeChat(){
+ const c=chats.find(x=>x.id===cur);
+ if(!c)return;
+ if(!confirm(c.members.length>2?'Quitter ce groupe ?':'Supprimer cette discussion ?'))return;
+ const{error}=await sb.rpc('leave_chat',{p_chat:c.id});
+ if(error)return note('Erreur');
+ await wipeChat(c.id,true);
+ chats=chats.filter(x=>x.id!==c.id);
+ closeChat();
 }
 
 /* ---------- affichage ---------- */
@@ -287,36 +537,118 @@ function renderList(){
  ul.textContent='';
  for(const c of chats){
   const li=document.createElement('li');
-  li.textContent='+'+c.other+(unread.has(c.id)?' •':'');
+  li.textContent=label(c)+(unread.has(c.id)?' •':'');
   if(c.id===cur)li.className='on';
   li.onclick=()=>open(c.id);
   ul.append(li);
  }
 }
+const scrollEnd=()=>{const b=$('#msgs');b.scrollTop=b.scrollHeight};
+async function fileURL(chat,fid){
+ const key=chat+':'+fid;
+ if(urls.has(key))return urls.get(key);
+ const r=await get('files',me+':'+key);
+ if(!r)return null;
+ const u=URL.createObjectURL(r.blob);
+ urls.set(key,u);
+ return u;
+}
+function dlButton(m,chat){
+ const b=document.createElement('button');
+ b.className='dl';
+ b.textContent=(m.name||'fichier')+' · '+fmt(m.size);
+ b.onclick=async()=>{
+  const u=await fileURL(chat,m.fid);
+  if(!u)return;
+  const a=document.createElement('a');
+  a.href=u;a.download=m.name||'fichier';a.click();
+ };
+ return b;
+}
+function fileEl(m,chat){
+ const box=document.createElement('div');
+ if(m.x){box.textContent='—';return box}
+ const mime=m.mime||'';
+ if(IMG.test(mime)){
+  const i=document.createElement('img');
+  i.onload=()=>{if(stick)scrollEnd()};
+  i.onerror=()=>box.replaceChildren(dlButton(m,chat));
+  fileURL(chat,m.fid).then(u=>{if(u)i.src=u;else box.textContent='—'});
+  box.append(i);
+ }else if(VID.test(mime)){
+  const v=document.createElement('video');
+  v.controls=true;v.preload='metadata';
+  v.onerror=()=>box.replaceChildren(dlButton(m,chat));
+  fileURL(chat,m.fid).then(u=>{if(u)v.src=u;else box.textContent='—'});
+  box.append(v);
+ }else box.append(dlButton(m,chat));
+ return box;
+}
 function renderMsgs(){
- const box=$('#msgs');
+ if(!cur)return;
+ const box=$('#msgs'),l=msgs(cur);
+ const s=cur+':'+l.length+':'+(l.length?l[l.length-1].sid:'');
+ if(s===sig)return;
+ sig=s;
+ const c=chats.find(x=>x.id===cur),group=c&&c.members.length>2;
+ stick=true;
  box.textContent='';
- for(const m of msgs(cur)){
+ for(const m of l){
   const d=document.createElement('div');
   d.className='m'+(m.f===me?' me':'');
-  d.textContent=m.t;
+  if(group&&m.f!==me){
+   const h=document.createElement('div');
+   h.className='s';h.textContent='+'+m.f;
+   d.append(h);
+  }
+  if(m.k==='f')d.append(fileEl(m,cur));
+  else d.append(document.createTextNode(m.t));
   box.append(d);
  }
- box.scrollTop=box.scrollHeight;
+ scrollEnd();
 }
+$('#msgs').onscroll=()=>{const b=$('#msgs');stick=b.scrollHeight-b.scrollTop-b.clientHeight<80};
 
 /* ---------- événements ---------- */
-$('#f').onsubmit=e=>{e.preventDefault();login()};
-$('#up').onclick=signup;
+$('#g-up').onclick=()=>show('signup');
+$('#g-in').onclick=()=>show('login');
+document.querySelectorAll('.bk').forEach(b=>b.onclick=()=>show('home'));
+$('#fu').onsubmit=e=>{e.preventDefault();signup()};
+$('#fl').onsubmit=e=>{e.preventDefault();login()};
 $('#ok').onclick=()=>enter(me);
-$('#nf').onsubmit=e=>{e.preventDefault();start($('#no').value);$('#no').value=''};
-$('#sf').onsubmit=e=>{e.preventDefault();const t=$('#tx').value.trim();$('#tx').value='';send(t)};
-$('#back').onclick=()=>{cur=null;$('#app').classList.remove('open');renderList()};
-$('#out').onclick=async()=>{await sb.auth.signOut();location.reload()};
+$('#nf').onsubmit=e=>{e.preventDefault();const v=$('#no').value;$('#no').value='';start(v)};
+$('#sf').onsubmit=e=>{e.preventDefault();const t=$('#tx').value.trim();$('#tx').value='';sendText(t)};
+$('#att').onclick=()=>$('#fi').click();
+$('#fi').onchange=e=>{const l=[...e.target.files];e.target.value='';sendFiles(l)};
+$('#back').onclick=closeChat;
+$('#clr').onclick=clearChat;
+$('#rm').onclick=removeChat;
+$('#mb').onclick=()=>{$('#menu').hidden=!$('#menu').hidden};
+$('#m-cache').onclick=async()=>{
+ $('#menu').hidden=true;
+ if(!confirm('Vider les messages et fichiers de cet appareil ?'))return;
+ await wipeAll(false);
+ renderMsgs();
+};
+$('#m-dev').onclick=async()=>{
+ $('#menu').hidden=true;
+ if(!confirm('Effacer messages et clés de cet appareil ?'))return;
+ await wipeAll(true);
+ leaveDevice();
+};
+$('#m-acc').onclick=async()=>{
+ $('#menu').hidden=true;
+ if(!confirm('Supprimer le compte et ses discussions ?'))return;
+ const{error}=await sb.rpc('delete_account');
+ if(error)return note('Erreur');
+ await wipeAll(true);
+ leaveDevice();
+};
+$('#m-out').onclick=leaveDevice;
 
 (async()=>{
  const{data:{session}}=await sb.auth.getSession();
- if(session)enter(session.user.email.split('@')[0]);else show('auth');
+ if(session)enter(session.user.email.split('@')[0]);else show('home');
 })();
 </script>
 </body>
