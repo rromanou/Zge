@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zge</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{font:15px/1.4 ui-monospace,Menlo,Consolas,monospace;background:#fff;color:#000}
+input,button{font:inherit;color:inherit;background:#fff;border:1px solid #999;padding:8px 10px}
+input{width:100%;outline:none}
+input:focus{border-color:#000}
+button{cursor:pointer}
+button:hover{background:#eee}
+#auth,#made{height:100%;display:flex;flex-direction:column;justify-content:center;gap:8px;max-width:320px;margin:0 auto;padding:16px}
+#auth form{display:flex;flex-direction:column;gap:8px}
+#auth .row{display:flex;gap:8px}
+#auth .row button{flex:1}
+#err{color:#555;min-height:1.4em}
+#made b{font-size:22px;font-weight:normal;letter-spacing:1px}
+#app{height:100%;display:grid;grid-template-columns:240px 1fr}
+aside{border-right:1px solid #999;display:flex;flex-direction:column;min-height:0}
+aside header,#conv header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px;border-bottom:1px solid #999}
+aside header button,#conv header button{padding:4px 10px}
+#nf{display:flex;gap:4px;padding:8px;border-bottom:1px solid #999}
+#nf button{width:42px}
+#list{list-style:none;overflow:auto;flex:1}
+#list li{padding:10px 8px;border-bottom:1px solid #ddd;cursor:pointer}
+#list li:hover{background:#f2f2f2}
+#list li.on{background:#000;color:#fff}
+#conv{display:flex;flex-direction:column;min-height:0}
+#msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+.m{max-width:75%;padding:6px 10px;border:1px solid #999;align-self:flex-start;white-space:pre-wrap;word-break:break-word}
+.m.me{align-self:flex-end;background:#000;color:#fff;border-color:#000}
+#sf{display:flex;gap:4px;padding:8px;border-top:1px solid #999}
+#sf button{width:48px}
+#back{display:none}
+@media(max-width:700px){
+ #app{grid-template-columns:1fr}
+ #app.open aside{display:none}
+ #app:not(.open) #conv{display:none}
+ #back{display:block}
+}
+</style>
+</head>
+<body>
+
+<main id="auth" hidden>
+ <form id="f">
+  <input id="n" placeholder="+000000000" inputmode="numeric" autocomplete="username">
+  <input id="p" type="password" maxlength="40" placeholder="mot de passe" autocomplete="current-password">
+  <div class="row"><button id="in">Entrer</button><button id="up" type="button">Créer</button></div>
+  <div id="err"></div>
+ </form>
+</main>
+
+<main id="made" hidden>
+ <b id="mn"></b>
+ <button id="ok">OK</button>
+</main>
+
+<main id="app" hidden>
+ <aside>
+  <header><span id="me"></span><button id="out">×</button></header>
+  <form id="nf"><input id="no" placeholder="+000000000" inputmode="numeric" autocomplete="off"><button>+</button></form>
+  <ul id="list"></ul>
+ </aside>
+ <section id="conv">
+  <header><button id="back">←</button><span id="who"></span><span></span></header>
+  <div id="msgs"></div>
+  <form id="sf"><input id="tx" maxlength="2000" autocomplete="off"><button>→</button></form>
+ </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://VOTRE-PROJET.supabase.co';
+const SUPABASE_KEY='VOTRE_CLE_ANON';
+
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=s=>document.querySelector(s);
+const enc=new TextEncoder(),dec=new TextDecoder();
+const DOMAIN='@zge.local';
+
+/* ---------- outils ---------- */
+const b64=b=>{let s='';new Uint8Array(b).forEach(x=>s+=String.fromCharCode(x));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const hex=u=>[...u].map(x=>x.toString(16).padStart(2,'0')).join('');
+const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
+const digits=s=>String(s).replace(/\D/g,'');
+const LS={
+ get:(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch{return d}},
+ set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
+};
+function rand9(){
+ const a=new Uint32Array(1);
+ do{crypto.getRandomValues(a)}while(a[0]>=4000000000);
+ return String(a[0]%1000000000).padStart(9,'0');
+}
+
+/* ---------- chiffrement ---------- */
+const ECDH={name:'ECDH',namedCurve:'P-256'};
+async function newIdentity(){
+ const kp=await crypto.subtle.generateKey(ECDH,true,['deriveKey']);
+ return{priv:await crypto.subtle.exportKey('jwk',kp.privateKey),pub:await crypto.subtle.exportKey('jwk',kp.publicKey)};
+}
+async function shared(privJwk,pubJwk){
+ const priv=await crypto.subtle.importKey('jwk',privJwk,ECDH,false,['deriveKey']);
+ const pub=await crypto.subtle.importKey('jwk',pubJwk,ECDH,false,[]);
+ return crypto.subtle.deriveKey({name:'ECDH',public:pub},priv,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function seal(key,bytes,aad){
+ const iv=rnd(12);
+ const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(aad)},key,bytes);
+ return{iv:b64(iv),data:b64(ct)};
+}
+async function unseal(key,o,aad){
+ return crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv),additionalData:enc.encode(aad)},key,unb64(o.data));
+}
+
+/* ---------- état local ---------- */
+let me=null,ident=null,chats=[],cur=null,busy=false,again=false;
+const unread=new Set(),keyCache=new Map();
+const kk=s=>'zge:'+me+':'+s;
+const keys=()=>LS.get(kk('k'),{});
+const setKey=(id,raw)=>{const k=keys();k[id]=raw;LS.set(kk('k'),k)};
+const msgs=id=>LS.get(kk('m:'+id),[]);
+const setMsgs=(id,l)=>LS.set(kk('m:'+id),l);
+async function chatKey(id){
+ if(keyCache.has(id))return keyCache.get(id);
+ const raw=keys()[id];
+ if(!raw)return null;
+ const k=await crypto.subtle.importKey('raw',unb64(raw),'AES-GCM',false,['encrypt','decrypt']);
+ keyCache.set(id,k);
+ return k;
+}
+
+/* ---------- compte ---------- */
+const show=id=>{for(const x of['auth','made','app'])$('#'+x).hidden=x!==id};
+const err=t=>$('#err').textContent=t||'';
+const pwOk=p=>p.length>=20&&p.length<=40;
+
+async function signup(){
+ const p=$('#p').value;
+ if(!pwOk(p))return err('20–40');
+ err('');
+ try{
+  for(let i=0;i<6;i++){
+   const id=rand9();
+   const{data,error}=await sb.auth.signUp({email:id+DOMAIN,password:p});
+   if(error){if(/registered|exists/i.test(error.message))continue;throw error}
+   if(!data.session)return err('Confirmation email active');
+   me=id;
+   ident=await newIdentity();
+   LS.set(kk('id'),ident);
+   const r=await sb.from('profiles').insert({id,uid:data.user.id,pub:ident.pub});
+   if(r.error)throw r.error;
+   $('#mn').textContent='+'+id;
+   show('made');
+   return;
+  }
+  err('Erreur');
+ }catch(e){err('Erreur')}
+}
+async function login(){
+ const id=digits($('#n').value),p=$('#p').value;
+ if(id.length!==9||!pwOk(p))return err('Erreur');
+ err('');
+ const{error}=await sb.auth.signInWithPassword({email:id+DOMAIN,password:p});
+ if(error)return err('Erreur');
+ enter(id);
+}
+async function enter(id){
+ me=id;
+ ident=LS.get(kk('id'),null);
+ if(!ident){
+  ident=await newIdentity();
+  LS.set(kk('id'),ident);
+  await sb.from('profiles').update({pub:ident.pub}).eq('id',me);
+ }
+ $('#me').textContent='+'+me;
+ show('app');
+ await sync();
+ const ch=sb.channel('z');
+ ch.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'to_id=eq.'+me},sync)
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'key_offers',filter:'to_id=eq.'+me},sync)
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'chats'},sync)
+   .subscribe();
+ setInterval(sync,8000);
+}
+
+/* ---------- synchronisation ---------- */
+async function sync(){
+ if(!me)return;
+ if(busy){again=true;return}
+ busy=true;
+ try{
+  const{data:cs}=await sb.from('chats').select('id,members');
+  chats=(cs||[]).map(c=>({id:c.id,other:c.members.find(x=>x!==me)||me}));
+
+  // clés de conversation reçues : déchiffrées ici, puis retirées du serveur
+  const{data:os}=await sb.from('key_offers').select('*').eq('to_id',me);
+  for(const o of os||[]){
+   try{
+    if(!keys()[o.chat_id]){
+     const{data:p}=await sb.from('profiles').select('pub').eq('id',o.from_id).maybeSingle();
+     const sh=await shared(ident.priv,p.pub);
+     setKey(o.chat_id,b64(await unseal(sh,o,o.chat_id)));
+    }
+    await sb.from('key_offers').delete().eq('chat_id',o.chat_id).eq('to_id',me);
+   }catch{}
+  }
+
+  // messages reçus : déchiffrés ici, stockés en local, puis retirés du serveur
+  const{data:ms}=await sb.from('messages').select('*').eq('to_id',me).order('id');
+  for(const m of ms||[]){
+   const k=await chatKey(m.chat_id);
+   if(!k)continue;
+   let p=null;
+   try{p=JSON.parse(dec.decode(await unseal(k,m,m.chat_id)))}catch{}
+   if(p){
+    const l=msgs(m.chat_id);
+    if(!l.some(x=>x.sid===m.id)){
+     l.push({sid:m.id,f:m.from_id,t:String(p.t),ts:Number(p.ts)||0});
+     l.sort((a,b)=>a.ts-b.ts);
+     setMsgs(m.chat_id,l);
+     if(m.chat_id!==cur)unread.add(m.chat_id);
+    }
+   }
+   await sb.from('messages').delete().eq('id',m.id);
+  }
+ }catch{}
+ busy=false;
+ renderList();
+ if(cur)renderMsgs();
+ if(again){again=false;sync()}
+}
+
+/* ---------- actions ---------- */
+async function start(raw){
+ const o=digits(raw);
+ if(o.length!==9||o===me)return;
+ const ex=chats.find(c=>c.other===o);
+ if(ex)return open(ex.id);
+ const{data:p}=await sb.from('profiles').select('pub').eq('id',o).maybeSingle();
+ if(!p)return;
+ const id=hex(rnd(32)),raw32=rnd(32);
+ let r=await sb.from('chats').insert({id,members:[me,o]});
+ if(r.error)return;
+ const sh=await shared(ident.priv,p.pub);
+ const w=await seal(sh,raw32,id);
+ r=await sb.from('key_offers').insert({chat_id:id,to_id:o,from_id:me,iv:w.iv,data:w.data});
+ if(r.error)return;
+ setKey(id,b64(raw32));
+ await sync();
+ open(id);
+}
+async function send(t){
+ const c=chats.find(x=>x.id===cur);
+ const k=c&&await chatKey(c.id);
+ if(!k||!t)return;
+ const ts=Date.now();
+ const s=await seal(k,enc.encode(JSON.stringify({t,ts})),c.id);
+ const r=await sb.from('messages').insert({chat_id:c.id,from_id:me,to_id:c.other,iv:s.iv,data:s.data});
+ if(r.error)return;
+ const l=msgs(c.id);
+ l.push({sid:'l'+hex(rnd(6)),f:me,t,ts});
+ setMsgs(c.id,l);
+ renderMsgs();
+}
+function open(id){
+ cur=id;
+ unread.delete(id);
+ $('#app').classList.add('open');
+ const c=chats.find(x=>x.id===id);
+ $('#who').textContent=c?'+'+c.other:'';
+ renderList();
+ renderMsgs();
+ $('#tx').focus();
+}
+
+/* ---------- affichage ---------- */
+function renderList(){
+ const ul=$('#list');
+ ul.textContent='';
+ for(const c of chats){
+  const li=document.createElement('li');
+  li.textContent='+'+c.other+(unread.has(c.id)?' •':'');
+  if(c.id===cur)li.className='on';
+  li.onclick=()=>open(c.id);
+  ul.append(li);
+ }
+}
+function renderMsgs(){
+ const box=$('#msgs');
+ box.textContent='';
+ for(const m of msgs(cur)){
+  const d=document.createElement('div');
+  d.className='m'+(m.f===me?' me':'');
+  d.textContent=m.t;
+  box.append(d);
+ }
+ box.scrollTop=box.scrollHeight;
+}
+
+/* ---------- événements ---------- */
+$('#f').onsubmit=e=>{e.preventDefault();login()};
+$('#up').onclick=signup;
+$('#ok').onclick=()=>enter(me);
+$('#nf').onsubmit=e=>{e.preventDefault();start($('#no').value);$('#no').value=''};
+$('#sf').onsubmit=e=>{e.preventDefault();const t=$('#tx').value.trim();$('#tx').value='';send(t)};
+$('#back').onclick=()=>{cur=null;$('#app').classList.remove('open');renderList()};
+$('#out').onclick=async()=>{await sb.auth.signOut();location.reload()};
+
+(async()=>{
+ const{data:{session}}=await sb.auth.getSession();
+ if(session)enter(session.user.email.split('@')[0]);else show('auth');
+})();
+</script>
+</body>
+</html>
