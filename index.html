@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-8YV6pW8ZsC2RZhbjebWaspzTHU3ELRVOyp4ITacMbCI='; style-src 'sha256-iGRYJHD7v6lJU7HIN6GdtV2VBIT68UwI2eOJ9dmqw88='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-U6x5x1Kp7XX1bwxzGXwVeHfttRlLxcwUrf85IP6Hwgw='; style-src 'sha256-JjqFjgFCphiIg26nZzBrvHVE/XAqxI0cSJ0qimpCPXI='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google" content="notranslate">
@@ -59,6 +59,8 @@ aside header button,#conv header button{padding:4px 10px}
 .doc ul{padding-left:20px}
 #srcv{white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.4;border:1px solid #999;padding:8px;margin:8px 0}
 #conv header>span:last-child{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+#rq{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #999}
+#rq span{flex:1}
 #qrv{position:fixed;inset:0;z-index:20;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
 .qh{font-size:18px;letter-spacing:1px}
 #qrc{max-width:90vw;max-height:60vh;width:auto;height:auto;border:1px solid #000}
@@ -206,6 +208,7 @@ aside header button,#conv header button{padding:4px 10px}
 <ul>
 <li>第一次见到某个号码的公钥时，系统默认信任它并记下指纹（先到先得）。这个设计有个软肋：如果服务器在你第一次查的时候就给了你一把假钥匙，你是发现不了的。</li>
 <li>所以，重要的聊天，请点聊天顶上的“#”按钮，会出来一串安全号码。你和对方用别的渠道（当面、打电话）对一对，两边一模一样才算数。</li>
+<li>聊天顶上会写着“unverified”（还没核对）或者一个“✓”（核对过了）。核对完以后，系统会问你“对上了没有”，你点确认才会变成“✓”。对方的钥匙一变，“✓”就自动没了，得重新核对。没核对的聊天，别拿来说要命的事。</li>
 <li>以后要是对方的钥匙变了（比如对方重装了），系统会弹窗问你信不信新钥匙。别手滑点“确定”，先去核对安全号码。</li>
 </ul>
 
@@ -222,7 +225,8 @@ aside header button,#conv header button{padding:4px 10px}
 <h2>十一、群聊、文件、图片</h2>
 <ul>
 <li>群聊最多21个人（你加另外20个）。群里每个人都能看到所有成员的号码。</li>
-<li>有人退群以后，聊天钥匙不会换。他之后拿不到服务器上发给群的新东西，因为那些东西是按人单独发的，但这套设计防不了“服务器本身有问题”的情况。</li>
+<li>有人退群以后，群里剩下的人里号码最小的那位，下次上线时会自动换一把新的群钥匙，只发给留下来的人。退群的人手里只剩旧钥匙，读不了之后的新消息。</li>
+<li>说清楚这里的限制：在那位成员上线之前，大家还在用旧钥匙；已经发出去的旧消息，退群的人要是早就存了，我们收不回来；每把新钥匙都带版本号，旧钥匙被重放回来也不会被接受。</li>
 <li>文件最大10MB。图片会先在你的设备上缩小（长边最多1280像素）并重新压成 JPEG，这样图片里带的拍摄地点这类附加信息（EXIF）就没了。</li>
 <li>GIF、视频和其他文件是原样发的，里面可能带着拍摄地点、设备型号、时间之类的元数据。发之前自己想清楚。</li>
 <li>只有图片和视频会直接在页面里显示。其他文件只给你一个下载按钮，下载下来打开之前先想想，别随便点来路不明的东西，打开以后出了事，是你自己的事。</li>
@@ -238,23 +242,25 @@ aside header button,#conv header button{padding:4px 10px}
 <li>页面有严格的内容安全策略（CSP）：不加载任何外部脚本、不允许内联注入、不让别人把它嵌进别的网页、只允许连你自己的 Supabase。</li>
 <li>所有显示出来的文字都当纯文本处理，别人发来一段代码，也只会显示成一段字，不会被执行。</li>
 <li>数据库每张表都开了行级权限：你只能读发给你的东西，只能以你自己的号码发东西，而且只能发给同一个聊天里的人。</li>
-<li>通讯录不公开：不能列出所有号码，只能按你输入的号码逐个查（一次最多20个）。</li>
+<li>通讯录不公开：不能列出所有号码，只能按你输入的号码逐个查（一次最多20个）。数据库还会检查每个人的公钥格式是不是完整、字段是不是齐全，缺东西的直接拒收。</li>
 <li>限流（防刷、防塞爆）：每分钟发送量有上限；同一个人最多只能往你的收件箱里塞一定数量的东西，不会一个人把你塞满；一小时内开新聊天的数量有上限，而且是按“当前登录的这个账号”来算，不是按客户端自己填的名单来算；查号码有每分钟、每小时、每天的上限，防止有人把所有号码扫一遍；删除、清空、退群、拉黑、换钥匙这些操作也都有次数限制。</li>
 <li>每个聊天只能拉真实存在的、不重复的号码，被对方拉黑的号码拉不进来。</li>
+<li>陌生人开的聊天，要你点“Accept”才算数（或者你自己回一句，也算接受）。你接受之前，对方最多只能给你发5条，而且发不了文件；你还会看到一条“Chat request”的提示，可以点“Decline”拒绝。同一个人最多让400条消息在你的收件箱里排队；同时挂着的未处理聊天请求最多200个。</li>
+<li>往同一个收件人写东西是一条一条排队处理的，所以上面这些计数不会被“同时发一大堆请求”给绕过去。</li>
 <li>你的号码必须和账号绑定，注册之后不能改，也不能抢别人的号码。</li>
 <li>网页里把浏览器自带的右键菜单关掉了：在页面上右键，不会再弹出浏览器那个带“检查”的菜单；在消息上右键（手机上长按），弹出来的是 Zge 自己的消息菜单。F12、Ctrl+Shift+I、Ctrl+Shift+J、Ctrl+Shift+C（苹果电脑上是 Cmd+Option+I/J/C）这些打开开发者工具的快捷键也被拦了。</li>
 <li>数据库对每个请求设了最长执行时间，太重的请求会被直接掐掉。</li>
 <li>网页自己也会“让着点”服务器：连不上的时候越等越久再重试，页面在后台时降低刷新频率，发消息和开聊天都有最小间隔，本地每个聊天最多存最近2000条。</li>
 <li>收到发给你、但你没有对应钥匙的消息，一小时后会被直接丢掉，不会一直堆着。</li>
 <li>收到的数据一律先检查格式再用，长度、编号、编码对不上的直接丢掉。</li>
-<li>收到的聊天钥匙，必须是从聊天成员发来的，而且必须是正好32字节才收。</li>
+<li>收到的聊天钥匙，必须是从聊天成员发来的、格式完全对得上，而且版本号比你手里的新才收。</li>
 <li>本地保险箱、会话只放内存、五分钟自动锁、登录失败递增等待、对方钥匙变更提醒、安全号码，上面都讲过了。</li>
 </ul>
 
 <h2>十三、局限（说实话，这些我们解决不了）</h2>
 <ul>
 <li>没有第三方审计。代码开源，不代表有人认真看过。你有能力的话，请自己看或者找人看。</li>
-<li>说句大实话：上面拦右键和开发者工具快捷键，只是挡一挡手滑的人，不算真正的保护。网页代码是跑在你自己的电脑上的，从浏览器的菜单里照样能打开开发者工具，懂行的人随便就能绕过去。Zge 的安全靠的是加密和前面讲的那些规则，不靠藏代码，反正代码本来就是公开的。</li>
+<li>说句大实话：上面拦右键和开发者工具快捷键，只是挡一挡手滑的人，不算真正的保护。网页代码是跑在你自己的电脑上的，从浏览器的菜单里照样能打开开发者工具，懂行的人随便就能绕过去。Zge 的安全靠的是加密和前面讲的那些规则，不靠藏代码，反正代码本来就是公开的。部署的人可以在代码里把 BLOCK_DEVTOOLS 改成 false，把这些拦截整个关掉。</li>
 <li>网页每次都是从服务器上现取的。理论上，管网页的人（运营者）或者黑进服务器的人，可以换一份有毒的网页，偷走你的钥匙。这是所有网页版加密聊天都躲不开的问题。想更放心，就自己下载源码、自己部署，并且核对代码有没有被改。</li>
 <li>你的设备要是中了木马、装了恶意浏览器插件、被人看着屏幕、有人盯着你敲键盘，加密再好也没用。</li>
 <li>没有“前向保密”：聊天钥匙是固定的，一旦某个聊天的钥匙泄露，这个聊天里所有的历史记录都会暴露。</li>
@@ -319,6 +325,7 @@ aside header button,#conv header button{padding:4px 10px}
    <button id="back">←</button><span id="who"></span>
    <span><button id="qr">QR</button> <button id="sn">#</button> <button id="bk">⊘</button> <button id="ed">✎</button> <button id="clr">Clear</button> <button id="rm">Delete</button></span>
   </header>
+  <div id="rq" hidden><span>Chat request</span><button type="button" id="ra">Accept</button><button type="button" id="rd">Decline</button></div>
   <div id="msgs"></div>
   <form id="sf">
    <button type="button" id="att">+</button>
@@ -356,6 +363,7 @@ const ITER=600000;              // PBKDF2 iterations
 const IDLE=5*60*1000;           // auto-lock delay
 const IMG=/^image\/(jpeg|png|gif|webp)$/,VID=/^video\/(mp4|webm|ogg|quicktime)$/;
 const HEX64=/^[0-9a-f]{64}$/,HEX16=/^[0-9a-f]{16}$/,NUM9=/^\d{9}$/;
+const BLOCK_DEVTOOLS=true;  // false = allow the browser right-click menu and the developer-tool shortcuts
 
 /* ---------- helpers ---------- */
 const b64=b=>{let s='';new Uint8Array(b).forEach(x=>s+=String.fromCharCode(x));return btoa(s)};
@@ -471,10 +479,17 @@ async function lsGet(name){
  }catch{return undefined}
 }
 async function loadStore(){
- const id=await lsGet('id'),k=await lsGet('k'),p=await lsGet('p'),c=await lsGet('c'),x=await lsGet('x');
+ const id=await lsGet('id'),k=await lsGet('k'),p=await lsGet('p'),c=await lsGet('c'),x=await lsGet('x'),vv=await lsGet('v');
  store={id:id||null,keys:k&&typeof k==='object'?k:{},pins:p&&typeof p==='object'?p:{},
   cts:{c:c&&c.c&&typeof c.c==='object'?c.c:{},t:c&&c.t&&typeof c.t==='object'?c.t:{}},
-  dead:x&&typeof x==='object'?x:{}};
+  dead:x&&typeof x==='object'?x:{},
+  ver:vv&&typeof vv==='object'?vv:{}};
+ // chat keys are {k: current key, e: version, o: older keys}
+ for(const[cid,v]of Object.entries(store.keys)){
+  if(typeof v==='string')store.keys[cid]={k:v,e:1,o:[]};
+  else if(!v||typeof v.k!=='string')delete store.keys[cid];
+  else{v.e=Number(v.e)||1;v.o=Array.isArray(v.o)?v.o.slice(0,5):[]}
+ }
  for(const d of Object.keys(store.dead))if(Date.now()-store.dead[d]>60*86400000)delete store.dead[d];
  M={};
  const pre=P+me+':m:';
@@ -488,23 +503,33 @@ const keys=()=>store.keys;
 const saveKeys=()=>queue(()=>lsSet('k',store.keys));
 const savePins=()=>queue(()=>lsSet('p',store.pins));
 const saveCts=()=>queue(()=>lsSet('c',store.cts));
+const saveVer=()=>queue(()=>lsSet('v',store.ver));
 const saveDead=()=>queue(()=>lsSet('x',store.dead));
 const saveMsgs=id=>queue(()=>M[id]?lsSet('m:'+id,M[id]):0);
-const setKey=(id,raw)=>{store.keys[id]=raw;saveKeys()};
+const setKey=(id,raw,e)=>{store.keys[id]={k:raw,e:e||1,o:[]};saveKeys()};
 const msgs=id=>M[id]||[];
 const setMsgs=(id,l)=>{M[id]=l.length>2000?l.slice(-2000):l;saveMsgs(id)};
 const others=c=>c.members.filter(x=>x!==me);
 const nm=n=>store&&store.cts.c[n]||'+'+n;
 const label=c=>store.cts.t[c.id]||others(c).map(nm).join(', ');
+const verified=c=>others(c).every(o=>store.ver[o]&&store.ver[o]===store.pins[o]);
+const whoText=c=>title(c)+(verified(c)?' ✓':' · unverified');
 const title=c=>{const l=label(c);return chats.some(x=>x!==c&&label(x)===l)?l+' #'+c.id.slice(0,4):l};
 const note=t=>{$('#note').textContent=t;clearTimeout(nt);nt=setTimeout(()=>$('#note').textContent='',3000)};
-async function chatKey(id){
+async function chatKeys(id){
  if(keyCache.has(id))return keyCache.get(id);
- const raw=keys()[id];
- if(!raw)return null;
- const k=await crypto.subtle.importKey('raw',unb64(raw),'AES-GCM',false,['encrypt','decrypt']);
- keyCache.set(id,k);
- return k;
+ const v=keys()[id];
+ if(!v)return null;
+ const imp=r=>crypto.subtle.importKey('raw',unb64(r),'AES-GCM',false,['encrypt','decrypt']);
+ const l=await Promise.all([v.k,...v.o].map(imp));
+ keyCache.set(id,l);
+ return l;
+}
+const chatKey=async id=>{const l=await chatKeys(id);return l?l[0]:null};
+// messages sent before a key change are still readable with the older keys
+async function unsealAny(id,o,aad){
+ for(const k of await chatKeys(id)||[]){try{return await unseal(k,o,aad)}catch{}}
+ throw new Error('decrypt');
 }
 function revokeUrls(prefix){
  for(const[k,u]of urls)if(!prefix||k.startsWith(prefix)){URL.revokeObjectURL(u);urls.delete(k)}
@@ -570,6 +595,33 @@ async function showSafety(){
   lines.push('+'+o+'  '+await safetyNumber(mine,fp));
  }
  alert(lines.join('\n'));
+ if(confirm('Did you compare these numbers with each person (in person or by call) and do they match?')){
+  for(const o of others(c))if(store.pins[o])store.ver[o]=store.pins[o];
+  saveVer();
+  $('#who').textContent=whoText(c);
+ }
+}
+
+/* ---------- new group key after someone leaves ---------- */
+async function rekey(cid){
+ const c=chats.find(x=>x.id===cid),cur0=keys()[cid];
+ if(!c||!cur0)return;
+ const mems=c.members.filter(x=>x!==me);
+ const ps=await getPubs(mems);
+ if(!ps||ps.length!==mems.length||!ps.every(p=>validPub(p.pub)))return;
+ for(const p of ps)if(!await trust(p.id,p.pub))return;
+ const e=cur0.e+1,k=rnd(32),pl=new Uint8Array(36);
+ pl.set(k);new DataView(pl.buffer).setUint32(32,e);
+ const offers=[];
+ for(const p of ps){
+  const sh=await shared(ident.priv,p.pub),w=await seal(sh,pl,cid+':'+me+':'+p.id+':'+e);
+  offers.push({chat_id:cid,to_id:p.id,from_id:me,iv:w.iv,data:w.data,e});
+ }
+ const r=await sb.from('key_offers').insert(offers);
+ if(r.error)return;
+ cur0.o.unshift(cur0.k);cur0.o=cur0.o.slice(0,5);cur0.k=b64(k);cur0.e=e;
+ saveKeys();keyCache.delete(cid);
+ k.fill(0);pl.fill(0);
 }
 
 /* ---------- screens and account ---------- */
@@ -685,6 +737,9 @@ async function applyNotice(n){
   revokeUrls(me+':'+n.chat_id+':'+n.who+':');
   setMsgs(n.chat_id,msgs(n.chat_id).filter(e=>e.f!==n.who));
   sig='';
+  // the remaining member with the lowest number renews the group key (only for the people still in the group)
+  const ch=chats.find(c=>c.id===n.chat_id);
+  if(ch&&keys()[n.chat_id]&&[...ch.members].sort()[0]===me)await rekey(n.chat_id);
  }else if(n.kind==='msg'&&NUM9.test(n.who||'')&&HEX16.test(n.mid||'')){
   store.dead[n.chat_id+':'+n.who+':'+n.mid]=Date.now();saveDead();
   const e=msgs(n.chat_id).find(x=>x.i===n.mid&&x.f===n.who);
@@ -723,9 +778,9 @@ async function sync(){
  if(busy){again=true;return}
  busy=true;lastSync=Date.now();let ok=false;
  try{
-  const{data:cs,error:e1}=await sb.from('chats').select('id,members');
+  const{data:cs,error:e1}=await sb.from('chats').select('id,members,accepted');
   if(e1)throw e1;
-  if(cs)chats=cs.filter(c=>HEX64.test(c.id)&&Array.isArray(c.members)&&c.members.includes(me)&&c.members.every(x=>NUM9.test(x))).map(c=>({id:c.id,members:c.members}));
+  if(cs)chats=cs.filter(c=>HEX64.test(c.id)&&Array.isArray(c.members)&&c.members.includes(me)&&c.members.every(x=>NUM9.test(x))).map(c=>({id:c.id,members:c.members,acc:Array.isArray(c.accepted)?c.accepted:[]}));
 
   // cleanup orders (clear / delete / leave)
   const{data:ns}=await sb.from('notices').select('*').eq('to_id',me).order('id');
@@ -734,22 +789,30 @@ async function sync(){
    await sb.from('notices').delete().in('id',ns.map(n=>n.id));
   }
 
-  // chat keys received: decrypted here, then removed from the server
+  // chat keys received: decrypted here, then removed from the server (a newer version replaces the older one)
   const{data:os}=await sb.from('key_offers').select('*').eq('to_id',me);
-  for(const o of os||[]){
-   try{
-    if(!HEX64.test(o.chat_id)||!NUM9.test(o.from_id))continue;
-    if(!chats.some(c=>c.id===o.chat_id&&c.members.includes(o.from_id)))continue;
-    if(!keys()[o.chat_id]){
+  const byChat={};
+  for(const o of os||[])if(HEX64.test(o.chat_id))(byChat[o.chat_id]=byChat[o.chat_id]||[]).push(o);
+  for(const cid of Object.keys(byChat)){
+   let keep=false;
+   for(const o of byChat[cid].sort((a,b)=>a.e-b.e)){
+    try{
+     if(!NUM9.test(o.from_id)||!Number.isInteger(o.e))continue;
+     if(!chats.some(c=>c.id===cid&&c.members.includes(o.from_id)))continue;
+     const k0=keys()[cid];
+     if(k0&&!(o.e>k0.e))continue;               // old or replayed version
      const ps=await getPubs([o.from_id]),p=ps&&ps[0];
-     if(!p||!validPub(p.pub)||!await trust(o.from_id,p.pub))continue;
+     if(!p||!validPub(p.pub)||!await trust(o.from_id,p.pub)){keep=true;continue}
      const sh=await shared(ident.priv,p.pub);
-     const raw=await unseal(sh,o,o.chat_id+':'+o.from_id+':'+me);
-     if(raw.byteLength!==32)continue;
-     setKey(o.chat_id,b64(raw));
-    }
-    await sb.from('key_offers').delete().eq('chat_id',o.chat_id).eq('to_id',me);
-   }catch{}
+     const raw=await unseal(sh,o,cid+':'+o.from_id+':'+me+':'+o.e);
+     if(raw.byteLength!==36||new DataView(raw).getUint32(32)!==o.e)continue;
+     const kb=b64(raw.slice(0,32));
+     if(k0){k0.o.unshift(k0.k);k0.o=k0.o.slice(0,5);k0.k=kb;k0.e=o.e;saveKeys()}
+     else setKey(cid,kb,o.e);
+     keyCache.delete(cid);
+    }catch{}
+   }
+   if(!keep)await sb.from('key_offers').delete().eq('chat_id',cid).eq('to_id',me);
   }
 
   // messages received: decrypted here, stored encrypted locally, then removed from the server
@@ -767,7 +830,7 @@ async function sync(){
      if(m.fid){
       if(!HEX16.test(m.fid)||!Number.isInteger(m.idx)||m.idx<0||m.idx>=100){done.push(m.id);continue}
       let buf=null;
-      try{buf=await unseal(k,m,m.chat_id+':'+m.from_id+':'+m.fid+':'+m.idx)}catch{}
+      try{buf=await unsealAny(m.chat_id,m,m.chat_id+':'+m.from_id+':'+m.fid+':'+m.idx)}catch{}
       if(buf){
        const key=fkey(m.chat_id,m.from_id,m.fid)+':'+m.idx,s=await lseal(buf,'c:'+key);
        await put('chunks',key,{iv:s.iv,d:s.d});
@@ -776,7 +839,7 @@ async function sync(){
       continue;
      }
      let p=null;
-     try{p=JSON.parse(dec.decode(await unseal(k,m,m.chat_id+':'+m.from_id+':m')))}catch{}
+     try{p=JSON.parse(dec.decode(await unsealAny(m.chat_id,m,m.chat_id+':'+m.from_id+':m')))}catch{}
      if(p&&typeof p==='object'&&HEX16.test(p.i)){
       const l=msgs(m.chat_id);
       if(store.dead[m.chat_id+':'+m.from_id+':'+p.i]){
@@ -908,19 +971,20 @@ async function start(ids){
  const ps=await getPubs(ids);
  if(!ps||ps.length!==ids.length||!ps.every(p=>NUM9.test(p.id)&&validPub(p.pub)))return note('Not found');
  for(const p of ps)if(!await trust(p.id,p.pub))return note('Key not trusted');
- const id=hex(rnd(32)),raw32=rnd(32);
+ const id=hex(rnd(32)),raw32=rnd(32),pl=new Uint8Array(36);
+ pl.set(raw32);new DataView(pl.buffer).setUint32(32,1);
  let r=await sb.from('chats').insert({id,members:[me,...ids]});
  if(r.error)return note('Error');
  const offers=[];
  for(const p of ps){
   const sh=await shared(ident.priv,p.pub);
-  const w=await seal(sh,raw32,id+':'+me+':'+p.id);
-  offers.push({chat_id:id,to_id:p.id,from_id:me,iv:w.iv,data:w.data});
+  const w=await seal(sh,pl,id+':'+me+':'+p.id+':1');
+  offers.push({chat_id:id,to_id:p.id,from_id:me,iv:w.iv,data:w.data,e:1});
  }
  r=await sb.from('key_offers').insert(offers);
  if(r.error)return note('Error');
  setKey(id,b64(raw32));
- raw32.fill(0);
+ raw32.fill(0);pl.fill(0);
  await sync();
  open(id);
 }
@@ -930,7 +994,7 @@ function open(id){
  sig='';
  $('#app').classList.add('open');
  const c=chats.find(x=>x.id===id);
- $('#who').textContent=c?title(c):'';
+ $('#who').textContent=c?whoText(c):'';
  $('#bk').hidden=!(c&&c.members.length===2);
  refreshInput();
  renderList();
@@ -945,6 +1009,8 @@ function closeChat(){
 }
 function refreshInput(){
  const on=!!(cur&&keys()[cur]);
+ const cc=chats.find(x=>x.id===cur);
+ $('#rq').hidden=!(cc&&!cc.acc.includes(me));
  $('#tx').disabled=!on;
  $('#att').disabled=!on;
  $('#go').disabled=!on;
@@ -974,7 +1040,7 @@ function renderList(){
  ul.textContent='';
  for(const c of chats){
   const li=document.createElement('li');
-  li.textContent=title(c)+(unread.has(c.id)?' •':'');
+  li.textContent=(c.acc.includes(me)?'':'? ')+title(c)+(unread.has(c.id)?' •':'');
   if(c.id===cur)li.className='on';
   li.onclick=()=>open(c.id);
   ul.append(li);
@@ -1219,7 +1285,7 @@ function hideQR(){
  c.getContext('2d').clearRect(0,0,c.width,c.height);
 }
 async function showQR(){
- const c=chats.find(x=>x.id===cur),raw=c&&keys()[c.id];
+ const c=chats.find(x=>x.id===cur),raw=c&&keys()[c.id]&&keys()[c.id].k;
  if(!raw)return;
  if(!confirm('This code is the key of this chat. Anyone who scans it can read the whole chat. Show it?'))return;
  try{
@@ -1232,6 +1298,15 @@ async function showQR(){
 }
 $('#qr').onclick=showQR;
 $('#qrx').onclick=hideQR;
+
+/* ---------- chat requests ---------- */
+$('#ra').onclick=async()=>{
+ if(!cur)return;
+ const{error}=await sb.rpc('accept_chat',{p_chat:cur});
+ if(error)return note('Error');
+ await sync();
+};
+$('#rd').onclick=()=>removeChat();
 
 /* ---------- block ---------- */
 $('#bk').onclick=async()=>{
@@ -1280,9 +1355,9 @@ async function delMsg(m,all){
  renderMsgs();
 }
 // the browser's own right-click menu (which has "Inspect") is disabled; on a message the site's own menu opens instead
-addEventListener('contextmenu',e=>e.preventDefault(),true);
+if(BLOCK_DEVTOOLS)addEventListener('contextmenu',e=>e.preventDefault(),true);
 // shortcuts that open the developer tools: F12, Ctrl/Cmd+Shift+I/J/C, Cmd+Option+I/J/C
-addEventListener('keydown',e=>{
+if(BLOCK_DEVTOOLS)addEventListener('keydown',e=>{
  const dev=['KeyI','KeyJ','KeyC'].includes(e.code);
  if(e.key==='F12'||((e.ctrlKey||e.metaKey)&&e.shiftKey&&dev)||(e.metaKey&&e.altKey&&dev)){e.preventDefault();e.stopPropagation()}
 },true);
@@ -1336,7 +1411,7 @@ $('#ed').onclick=()=>{
  const t=cleanLabel(v);
  if(t)store.cts.t[c.id]=t;else delete store.cts.t[c.id];
  saveCts();
- $('#who').textContent=title(c);
+ $('#who').textContent=whoText(c);
  renderList();
 };
 
