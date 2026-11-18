@@ -3,12 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-5hVJlwHxyInAnuqE2/xizkmtilT6nlwUASR4TCDfXWo='; style-src 'sha256-cJw9ORJ62NgvZSBppIDpKsTAUP3iDFy+2+hw9fQhGO0='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
 <meta name="google" content="notranslate">
 <title>Zge</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;border-radius:0}
 [hidden]{display:none!important}
 html,body{height:100%}
+html.hid #app{visibility:hidden}
 body{font:15px/1.4 ui-monospace,Menlo,Consolas,monospace;background:#fff;color:#000}
 input,button{font:inherit;color:inherit;background:#fff;border:1px solid #999;padding:8px 10px}
 input{width:100%;outline:none}
@@ -46,6 +50,23 @@ aside header button,#conv header button{padding:4px 10px}
 #sf{display:flex;gap:4px;padding:8px;border-top:1px solid #999}
 #sf button{width:48px}
 #back{display:none}
+.lk{border:0;background:none;color:#555;text-decoration:underline;padding:0;text-align:left}
+.lk:hover{background:none;color:#000}
+.doc{height:100%;overflow:auto;max-width:720px;margin:0 auto;padding:16px;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;line-height:1.7}
+.doc h1{font-size:20px;margin:12px 0 6px}
+.doc h2{font-size:16px;margin:22px 0 6px;border-bottom:1px solid #ddd;padding-bottom:2px}
+.doc p,.doc li{margin:6px 0}
+.doc ul{padding-left:20px}
+#srcv{white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.4;border:1px solid #999;padding:8px;margin:8px 0}
+#cm{position:fixed;z-index:9;background:#fff;border:1px solid #000;display:flex;flex-direction:column;min-width:170px}
+#cm button{border:0;border-bottom:1px solid #ddd;text-align:left}
+#cm button:last-child{border-bottom:0}
+#cts{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+#cf{display:flex;flex-direction:column;gap:4px}
+#cl{list-style:none}
+#cl li{display:flex;gap:4px;align-items:center;padding:4px 0;border-bottom:1px solid #ddd}
+#cl li span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cl li button{padding:2px 8px}
 @media(max-width:700px){
  #app{grid-template-columns:1fr}
  #app.open aside{display:none}
@@ -60,6 +81,7 @@ aside header button,#conv header button{padding:4px 10px}
  <b class="t">Zge</b>
  <button id="g-up">Create account</button>
  <button id="g-in">Log in</button>
+ <button type="button" class="lk lg">隐私与条款 · Privacy &amp; Terms</button>
 </main>
 
 <main id="signup" class="v" hidden>
@@ -77,6 +99,7 @@ aside header button,#conv header button{padding:4px 10px}
   <input id="n" placeholder="+000000000" inputmode="numeric" autocomplete="username">
   <input id="p" type="password" maxlength="40" placeholder="password" autocomplete="current-password">
   <button>Enter</button>
+  <button type="button" class="lk lg">隐私与条款 · Privacy &amp; Terms</button>
   <div class="err"></div>
   <button type="button" class="bk">←</button>
  </form>
@@ -89,57 +112,237 @@ aside header button,#conv header button{padding:4px 10px}
  <button id="ok">OK</button>
 </main>
 
+<main id="legal" class="doc" lang="zh-Hans" hidden>
+<button type="button" id="lg-back" class="lk">← 返回 / Back</button>
+<h1>Zge 隐私、透明度和使用条款（大白话版）</h1>
+<p class="sub">最后更新：2026年11月17日。这页是用大白话写的，没绕弯子，没藏着掖着。看不懂的地方，宁可多看两遍，也别瞎猜。</p>
+
+<h2>一、先说重点（懒得看全文的，看这一段就行）</h2>
+<ul>
+<li>Zge 是个聊天网站。消息、图片、文件都在你自己的浏览器里加密，加密完了才发出去。服务器只管“送快递”，拆不开盒子。</li>
+<li>聊天用的钥匙，永远不会明文上服务器。服务器上只有加密过的东西，对方一收到，服务器上那份就删。</li>
+<li>注册不要邮箱、不要手机号，只要一个密码（20到40个字符）。系统会随机给你一个“+9位数字”的号码，这就是你的账号。</li>
+<li>密码忘了、号码忘了，没人能帮你找回来，作者也不行。丑话说在前头：这是故意的，不是漏洞。</li>
+<li>但是，别把话说满：服务器看不到内容，可它看得到“谁在跟谁聊、什么时候聊、大概多大”。这叫元数据，下面会讲得清清楚楚。</li>
+<li>没有任何广告、没有统计代码、没有第三方跟踪，页面也不加载任何外部脚本。</li>
+<li>这个网站没有经过第三方安全审计。别把它当成万能的保险箱，下面“局限”那一节一定要看。</li>
+</ul>
+
+<h2>二、谁做的、开源不开源</h2>
+<p>Zge 由 Zgesammen 创建。代码是开源的，也就是说，网页的源代码摆在那儿，谁都能看、能查、能自己拿去用。你不用光听我们说“放心”，自己点一下就能看：</p>
+<p><button type="button" id="src" class="lk">查看源代码（点这里）</button></p>
+<pre id="srcv" hidden></pre>
+<p>点开以后，你看到的就是这个网页真正在跑的代码。想检查有没有偷偷上传你的东西，可以搜“sb.from”和“sb.rpc”这些调用，这些就是跟服务器说话的全部地方。数据库的建表和权限规则（schema.sql）也是公开的，不是什么黑箱。另外，网页还会加载一个叫 supabase.js 的官方连接库，那是 Supabase 官方做的，不是我们写的。</p>
+
+<h2>三、账号是怎么回事</h2>
+<ul>
+<li>你点“Create account”，输入密码，系统随机生成9位数字，前面加个加号，比如 +123456789。这就是你的号码，别人用它来找你聊。</li>
+<li>密码必须20到40个字符，而且不能全是重复的字符。为啥这么长？因为服务器上存着的是你密码的哈希值，要是密码太短，被人撞库一下就开了。</li>
+<li>底层用的是 Supabase 的登录系统。它需要一个“邮箱”字段，所以我们塞进去一个假的：你的号码@zge.local。这个地址不是真的，不会给你发任何邮件。</li>
+<li>登录的时候，你的密码会通过加密连接（HTTPS）发到 Supabase 去验证，服务器那边存的是哈希，不是明文。说白了：密码不是“端到端”的，它得过一下 Supabase。这点必须跟你讲清楚。</li>
+<li>没有“忘记密码”这个功能。没有邮箱，没有手机，没有客服能帮你重置。号码记不住就抄在本子上，密码丢了，账号就等于丢了。</li>
+<li>登录状态只放在内存里，不写进浏览器的硬盘。所以刷新页面、关掉标签页，就要重新登录。</li>
+<li>登录输错了会有等待时间，错得越多等得越久。服务器那边 Supabase 本身也有限流。</li>
+</ul>
+
+<h2>四、加密到底是怎么搞的（一步一步讲）</h2>
+<ul>
+<li>第一步：你注册的时候，浏览器自己生成一对密钥（椭圆曲线 P-256）。公钥发给服务器，放在你的资料里，谁都能通过你的号码查到。私钥只留在你自己的设备里，不会发出去。</li>
+<li>第二步：你开一个新聊天的时候，你的浏览器随机生成一把32字节的“聊天钥匙”。这把钥匙是这个聊天专用的。</li>
+<li>第三步：你的浏览器用你的私钥加上对方的公钥，算出一把只有你们两个能算出来的“共享密钥”，拿它把聊天钥匙加密（AES-GCM），再把加密后的结果交给服务器转交。服务器手里只有一包看不懂的乱码。</li>
+<li>第四步：对方上线以后，取走这包乱码，在自己的设备里用自己的私钥解开，得到聊天钥匙，存进自己的本地保险箱。然后服务器上那份立刻删除。聊天钥匙从头到尾没有以明文形式上过服务器。</li>
+<li>第五步：之后每条消息、每个文件，都是用这把聊天钥匙加密（AES-GCM）以后才发出去。接收方取走、解密、存到本地，服务器上的那份就删了。</li>
+<li>加密的时候还把“谁发的、哪个聊天”这些信息绑进去了。服务器想把一条消息偷偷挪到别的聊天，或者冒充别人，解密就会直接失败。</li>
+<li>群聊也是同一套：创建者给每个成员各发一份加密过的聊天钥匙，所有人用同一把聊天钥匙。</li>
+</ul>
+
+<h2>五、服务器上到底存了啥（一条一条列给你）</h2>
+<ul>
+<li>资料表：你的号码、你的公钥。就这些。</li>
+<li>聊天表：聊天的一个很长的随机编码，加上里面有哪些号码。这是整个聊天唯一长期保存的东西。</li>
+<li>钥匙中转表：加密过的聊天钥匙。对方一取走就删，没取走最多留30天。</li>
+<li>消息表：加密后的消息或文件分块、发送者号码、接收者号码、发送时间。对方一取走就删，没取走最多留30天。</li>
+<li>通知表：“清空聊天”“删除聊天”“删除某条消息”这类清理指令，让对方的设备上线后照着删。对方处理完就删。</li>
+<li>Supabase 登录系统：那个假邮箱（号码@zge.local）、密码哈希，还有 Supabase 自己记的登录时间、IP 这类系统日志。这部分归 Supabase 管，我们没法左右他们记多久。</li>
+<li>“30天”的清理不是定时任务，而是有人登录时顺手触发的。所以说是“最多大概30天”，不是精确到秒。</li>
+</ul>
+
+<h2>六、服务器看不到啥</h2>
+<ul>
+<li>看不到消息内容，看不到图片和文件的内容，连文件名也看不到（文件名也在加密的消息里面）。</li>
+<li>看不到你的私钥，看不到聊天钥匙，看不到你的联系人备注名。</li>
+<li>密码明文不存，只存哈希。</li>
+</ul>
+
+<h2>七、服务器看得到啥（这块别装没有）</h2>
+<ul>
+<li>谁和谁有聊天，群里有哪些号码，聊天是什么时候建的。</li>
+<li>谁在什么时候给谁发了东西。每条消息的发送时间服务器是知道的。</li>
+<li>东西大概有多大。文字消息会补到512字节的整数倍，所以看不出你发了几个字，但看得出是长是短；文件被切成256KB一块，每块一样大，所以能大概猜出文件有多大。</li>
+<li>一个号码存不存在。你输入一个号码，系统会告诉你“找得到”还是“找不到”，所以号码本身不是秘密，别人知道你的号码就能给你开聊天。</li>
+<li>Supabase 和放网页的托管方，都能看到你的 IP 地址和访问时间，这是上网的基本规则，我们管不着。</li>
+<li>管数据库的人（也就是运营者）能在后台看到上面这些表，也能删账号，但没法解开消息内容。</li>
+</ul>
+
+<h2>八、你设备上存了啥</h2>
+<ul>
+<li>聊天钥匙、你的私钥、已经信任的对方钥匙指纹、所有消息、联系人备注名，全都存在你浏览器的本地存储里，而且是加密存的。</li>
+<li>加密用的是一把随机的“保险箱钥匙”，这把钥匙又被你的密码锁着（用密码算出来的，算了60万轮，就是为了让别人猜密码变得很慢）。保险箱钥匙只放在内存里。</li>
+<li>图片、视频、文件放在浏览器的另一块存储（IndexedDB）里，同样是加密的。</li>
+<li>实话实说，有两样东西没加密：一是你上次登录的号码，用来帮你自动填号码；二是本地存储项的“名字”，里面带着你的号码和聊天编码。也就是说，有人能翻你的浏览器，能看出你有哪些聊天，但看不到内容。</li>
+<li>五分钟没动静，系统自动把你登出，保险箱也就跟着锁上了。切到别的标签页回来时，如果已经过了五分钟也一样。</li>
+<li>没有云备份，没有同步。清掉浏览器数据、换电脑、换浏览器，聊天记录就没了，而且找不回来。想留着，自己想办法。</li>
+<li>我们不用 Cookie，不用任何统计、广告、跟踪。</li>
+</ul>
+
+<h2>九、怎么确认对方是真的对方</h2>
+<ul>
+<li>第一次见到某个号码的公钥时，系统默认信任它并记下指纹（先到先得）。这个设计有个软肋：如果服务器在你第一次查的时候就给了你一把假钥匙，你是发现不了的。</li>
+<li>所以，重要的聊天，请点聊天顶上的“#”按钮，会出来一串安全号码。你和对方用别的渠道（当面、打电话）对一对，两边一模一样才算数。</li>
+<li>以后要是对方的钥匙变了（比如对方重装了），系统会弹窗问你信不信新钥匙。别手滑点“确定”，先去核对安全号码。</li>
+</ul>
+
+<h2>十、删东西：到底能删到什么程度</h2>
+<ul>
+<li>删除单条消息：在消息上点右键（手机上长按），会出来菜单。“只删我这边”只删你自己设备上的。“全部删除”（只有你自己发的消息才有）会向服务器发一条删除请求；对方下次上线时，服务器把请求交给对方，对方的设备把这条消息（包括它的文件）从本地删掉，然后服务器上的请求也就删了。如果对方还没上线、消息还没被取走，之后消息一到，也会被直接丢掉。</li>
+<li>清空聊天：你本地清空，对方上线后也清空。聊天本身还在，钥匙还在，可以接着聊。</li>
+<li>删除聊天：两个人的聊天，你删了，对方上线后也会被删，钥匙一起没。群聊里点删除等于退群：你的消息会从别人的设备上清掉，群里只剩一个人的话，群就解散。</li>
+<li>删除账号：你的账号、公钥、没被取走的消息和钥匙都会从服务器清掉，你参与的聊天按上面的规则处理。</li>
+<li>清缓存：只清这台设备上的消息和文件，钥匙留着。“抹除设备”：这台设备上的消息和钥匙全清，并登出。</li>
+<li>要说在前头：删除靠的是对方的程序“听话”去删。对方要是改过代码、截了屏、拍了照、复制了文字，或者备份了浏览器数据，我们是拦不住的。“全部删除”是一个请求，不是一道保证。</li>
+</ul>
+
+<h2>十一、群聊、文件、图片</h2>
+<ul>
+<li>群聊最多21个人（你加另外20个）。群里每个人都能看到所有成员的号码。</li>
+<li>有人退群以后，聊天钥匙不会换。他之后拿不到服务器上发给群的新东西，因为那些东西是按人单独发的，但这套设计防不了“服务器本身有问题”的情况。</li>
+<li>文件最大10MB。图片会先在你的设备上缩小（长边最多1280像素）并重新压成 JPEG，这样图片里带的拍摄地点这类附加信息（EXIF）就没了。</li>
+<li>GIF、视频和其他文件是原样发的，里面可能带着拍摄地点、设备型号、时间之类的元数据。发之前自己想清楚。</li>
+<li>只有图片和视频会直接在页面里显示。其他文件只给你一个下载按钮，下载下来打开之前先想想，别随便点来路不明的东西，打开以后出了事，是你自己的事。</li>
+<li>多个聊天可以跟同样的号码同时存在，想开几个开几个。</li>
+<li>联系人备注名只存在你自己的设备上，服务器和对方都看不到。你可以给号码起名字，也可以给整个聊天起个只有你看得到的标题。</li>
+</ul>
+
+<h2>十二、我们做了哪些防护</h2>
+<ul>
+<li>页面有严格的内容安全策略（CSP）：不加载任何外部脚本、不允许内联注入、不让别人把它嵌进别的网页、只允许连你自己的 Supabase。</li>
+<li>所有显示出来的文字都当纯文本处理，别人发来一段代码，也只会显示成一段字，不会被执行。</li>
+<li>数据库每张表都开了行级权限：你只能读发给你的东西，只能以你自己的号码发东西，而且只能发给同一个聊天里的人。</li>
+<li>通讯录不公开：不能列出所有号码，只能按你输入的号码逐个查（一次最多20个）。</li>
+<li>限流：每分钟发送量有上限，每个人收件箱有上限，一小时内开聊天的数量有上限，防止有人刷屏刷爆。</li>
+<li>收到的数据一律先检查格式再用，长度、编号、编码对不上的直接丢掉。</li>
+<li>收到的聊天钥匙，必须是从聊天成员发来的，而且必须是正好32字节才收。</li>
+<li>本地保险箱、会话只放内存、五分钟自动锁、登录失败递增等待、对方钥匙变更提醒、安全号码，上面都讲过了。</li>
+</ul>
+
+<h2>十三、局限（说实话，这些我们解决不了）</h2>
+<ul>
+<li>没有第三方审计。代码开源，不代表有人认真看过。你有能力的话，请自己看或者找人看。</li>
+<li>网页每次都是从服务器上现取的。理论上，管网页的人（运营者）或者黑进服务器的人，可以换一份有毒的网页，偷走你的钥匙。这是所有网页版加密聊天都躲不开的问题。想更放心，就自己下载源码、自己部署，并且核对代码有没有被改。</li>
+<li>你的设备要是中了木马、装了恶意浏览器插件、被人看着屏幕、有人盯着你敲键盘，加密再好也没用。</li>
+<li>没有“前向保密”：聊天钥匙是固定的，一旦某个聊天的钥匙泄露，这个聊天里所有的历史记录都会暴露。</li>
+<li>元数据（谁和谁、什么时候、多大）藏不住，上面已经说清楚了。</li>
+<li>没有拉黑功能。别人知道你的号码就能给你开聊天，你只能删掉那个聊天（删了对方那边也会删）。</li>
+<li>服务有可能宕机、有可能丢数据、有可能哪天不干了，别拿它当唯一的存档。</li>
+</ul>
+
+<h2>十四、使用条件（用 Zge 就等于同意下面这些）</h2>
+<ul>
+<li>你得达到你所在的国家或地区法律规定的、可以使用这类服务的年龄。</li>
+<li>不准用 Zge 干违法的事：诈骗、勒索、恐吓、骚扰、跟踪、发儿童性剥削内容、教唆或策划暴力和恐怖活动、侵犯别人隐私、传播木马病毒，等等，一概不行。</li>
+<li>不准攻击这个服务：不准爆破别人的账号、不准刷接口、不准想办法绕过限流、不准尝试读别人的数据。</li>
+<li>你发的东西，后果你自己负责。我们看不到内容，没法事先审核，也不会假装能管。但如果发现有人滥用服务，运营者保留限制、封停或删除对应账号的权利。</li>
+<li>服务按“现状”提供，不保证一直能用、不保证不出错、不保证不丢数据，也不保证适合你的某个特殊用途。在法律允许的最大范围内，因使用或无法使用 Zge 造成的损失，作者和运营者不承担责任。</li>
+<li>这些条件以后可能会改。改了以后你还继续用，就当你同意新的版本。每次更新，上面的日期会跟着变。</li>
+<li>具体适用哪个地方的法律，由运营者部署时另行写明，这里不瞎编。</li>
+</ul>
+
+<h2>十五、你的数据、你说了算</h2>
+<ul>
+<li>你随时可以删掉自己的账号，服务器上你的账号资料和没取走的东西会被清掉。</li>
+<li>你随时可以清缓存或抹除设备，本地的东西你自己说了算。</li>
+<li>我们不卖数据、不拿数据做广告、不做用户画像，因为我们压根拿不到内容。</li>
+<li>跟你有关的服务器数据，主要就是第五节列的那些。想知道更多，直接看源码和 schema.sql。</li>
+<li>联系运营者的方式，由运营者在部署的页面或说明里写明。</li>
+</ul>
+
+<h2>十六、最后一句</h2>
+<p>Zge 想做的事很简单：尽量少收你的东西，收到的也尽量看不懂，用完就删。它能帮你挡住大多数窥探，但它不是万能的。该核对的核对，该小心的小心，别拿它去干要命的事还指望它兜底。</p>
+<p>由 Zgesammen 创建，源码公开。</p>
+<p><button type="button" id="src2" class="lk">查看源代码</button> · <button type="button" id="lg-back2" class="lk">← 返回 / Back</button></p>
+</main>
+
+
 <main id="app" hidden>
  <aside>
   <header><span id="me"></span><button id="mb">⋯</button></header>
   <div id="menu" hidden>
+   <button id="m-cts">Contacts</button>
    <button id="m-cache">Clear cache</button>
    <button id="m-dev">Erase device</button>
    <button id="m-acc">Delete account</button>
    <button id="m-out">Log out</button>
   </div>
-  <form id="nf"><input id="no" placeholder="+000000000 +000000000" autocomplete="off"><button>+</button></form>
+  <form id="nf"><input id="no" placeholder="+000000000 +000000000" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button>+</button></form>
   <div id="note"></div>
+  <div id="cts" hidden>
+   <form id="cf">
+    <input id="cnum" placeholder="+000000000" inputmode="numeric" autocomplete="off">
+    <input id="cname" maxlength="40" placeholder="name (this device only)" autocomplete="off" spellcheck="false">
+    <button>+</button>
+   </form>
+   <ul id="cl"></ul>
+  </div>
   <ul id="list"></ul>
  </aside>
  <section id="conv">
   <header>
    <button id="back">←</button><span id="who"></span>
-   <span><button id="clr">Clear</button> <button id="rm">Delete</button></span>
+   <span><button id="sn">#</button> <button id="ed">✎</button> <button id="clr">Clear</button> <button id="rm">Delete</button></span>
   </header>
   <div id="msgs"></div>
   <form id="sf">
    <button type="button" id="att">+</button>
-   <input id="tx" maxlength="2000" autocomplete="off">
+   <input id="tx" maxlength="2000" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
    <button id="go">→</button>
    <input id="fi" type="file" multiple hidden>
   </form>
  </section>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL='https://VOTRE-PROJET.supabase.co';
-const SUPABASE_KEY='VOTRE_CLE_ANON';
+<div id="cm" hidden></div>
 
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+<script src="supabase.js"></script>
+<script>
+'use strict';
+if(window.top!==window.self){document.documentElement.remove();throw new Error('frame')}
+if(!window.supabase){document.body.textContent='supabase.js missing';throw new Error('lib')}
+
+const SUPABASE_URL='https://taewxhmkivlmromyeslx.supabase.co';
+const SUPABASE_KEY='sb_publishable_Q2ixADbOElHtMihV4AxI8w_X93EfSEO';
+
+// the login session lives in memory only: nothing about it is written to the browser
+const mem={};
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{
+ storage:{getItem:k=>mem[k]??null,setItem:(k,v)=>{mem[k]=v},removeItem:k=>{delete mem[k]}},
+ persistSession:true,autoRefreshToken:true,detectSessionInUrl:false
+}});
 const $=s=>document.querySelector(s);
 const enc=new TextEncoder(),dec=new TextDecoder();
-const DOMAIN='@zge.local';
-const CH=256*1024;            // taille d'un morceau de fichier
-const MAX=10*1024*1024;       // taille max d'un fichier
+const P='zge2:',DOMAIN='@zge.local';
+const CH=256*1024;              // size of one file chunk
+const MAX=10*1024*1024;         // max file size
+const ITER=600000;              // PBKDF2 iterations
+const IDLE=5*60*1000;           // auto-lock delay
 const IMG=/^image\/(jpeg|png|gif|webp)$/,VID=/^video\/(mp4|webm|ogg|quicktime)$/;
+const HEX64=/^[0-9a-f]{64}$/,HEX16=/^[0-9a-f]{16}$/,NUM9=/^\d{9}$/;
 
-/* ---------- outils ---------- */
+/* ---------- helpers ---------- */
 const b64=b=>{let s='';new Uint8Array(b).forEach(x=>s+=String.fromCharCode(x));return btoa(s)};
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const hex=u=>[...u].map(x=>x.toString(16).padStart(2,'0')).join('');
 const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
 const digits=s=>String(s).replace(/\D/g,'');
-const LS={
- get:(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch{return d}},
- set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
-};
 function rand9(){
  const a=new Uint32Array(1);
  do{crypto.getRandomValues(a)}while(a[0]>=4000000000);
@@ -148,11 +351,17 @@ function rand9(){
 const safeMime=m=>IMG.test(m)||VID.test(m)?m:'application/octet-stream';
 const cleanName=n=>String(n||'file').slice(0,120).replace(/[\\\/\0]/g,'_');
 const fmt=n=>n>1e6?(n/1e6).toFixed(1)+' MB':Math.max(1,Math.ceil(n/1e3))+' KB';
+// messages are padded so their length does not leak
+const padText=s=>{
+ const b=enc.encode(s),o=new Uint8Array(Math.ceil((b.length+1)/512)*512);
+ o.set(b);o.fill(32,b.length);
+ return o;
+};
 
-/* ---------- stockage local des fichiers (IndexedDB) ---------- */
+/* ---------- local file storage (IndexedDB, always encrypted) ---------- */
 let dbp;
 const db=()=>dbp||(dbp=new Promise((res,rej)=>{
- const r=indexedDB.open('zge',1);
+ const r=indexedDB.open('zge2',1);
  r.onupgradeneeded=()=>{r.result.createObjectStore('files');r.result.createObjectStore('chunks')};
  r.onsuccess=()=>res(r.result);
  r.onerror=()=>rej(r.error);
@@ -168,17 +377,20 @@ const idb=async(store,mode,fn)=>{
 const put=(st,k,v)=>idb(st,'readwrite',s=>s.put(v,k));
 const get=(st,k)=>idb(st,'readonly',s=>s.get(k));
 const del=(st,k)=>idb(st,'readwrite',s=>s.delete(k));
-const delRange=(st,p)=>idb(st,'readwrite',s=>s.delete(IDBKeyRange.bound(p,p+'\uffff')));
+const delRange=(st,p)=>idb(st,'readwrite',s=>s.delete(IDBKeyRange.bound(p,p+'￿')));
+const fkey=(chat,from,fid)=>me+':'+chat+':'+from+':'+fid;
 
-/* ---------- chiffrement ---------- */
+/* ---------- network encryption (ECDH P-256 + AES-GCM) ---------- */
 const ECDH={name:'ECDH',namedCurve:'P-256'};
 async function newIdentity(){
  const kp=await crypto.subtle.generateKey(ECDH,true,['deriveKey']);
  return{priv:await crypto.subtle.exportKey('jwk',kp.privateKey),pub:await crypto.subtle.exportKey('jwk',kp.publicKey)};
 }
+const validPub=j=>!!j&&typeof j==='object'&&j.kty==='EC'&&j.crv==='P-256'&&typeof j.x==='string'&&typeof j.y==='string'&&j.x.length<=64&&j.y.length<=64&&!j.d;
+const cleanPub=j=>({kty:'EC',crv:'P-256',x:j.x,y:j.y});
 async function shared(privJwk,pubJwk){
  const priv=await crypto.subtle.importKey('jwk',privJwk,ECDH,false,['deriveKey']);
- const pub=await crypto.subtle.importKey('jwk',pubJwk,ECDH,false,[]);
+ const pub=await crypto.subtle.importKey('jwk',cleanPub(pubJwk),ECDH,false,[]);
  return crypto.subtle.deriveKey({name:'ECDH',public:pub},priv,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
 }
 async function seal(key,bytes,aad){
@@ -188,16 +400,83 @@ async function seal(key,bytes,aad){
 }
 const unseal=(key,o,aad)=>crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv),additionalData:enc.encode(aad)},key,unb64(o.data));
 
-/* ---------- état local ---------- */
-let me=null,ident=null,chats=[],cur=null,busy=false,again=false,entered=false,sending=false,sig='',stick=true,nt;
-const unread=new Set(),keyCache=new Map(),urls=new Map();
-const kk=s=>'zge:'+me+':'+s;
-const keys=()=>LS.get(kk('k'),{});
-const setKey=(id,raw)=>{const k=keys();k[id]=raw;LS.set(kk('k'),k)};
-const msgs=id=>LS.get(kk('m:'+id),[]);
-const setMsgs=(id,l)=>LS.set(kk('m:'+id),l);
+/* ---------- state ---------- */
+let me=null,ident=null,store=null,M={},DK=null,chats=[],cur=null;
+let busy=false,again=false,entered=false,sending=false,sig='',stick=true;
+let nt,idleT,lastAct=Date.now(),fails=0,lockUntil=0;
+const unread=new Set(),keyCache=new Map(),urls=new Map(),declined=new Set();
+let wq=Promise.resolve();
+const queue=f=>{wq=wq.then(f).catch(()=>{})};
+
+/* ---------- encrypted local vault ----------
+   Everything stored on this device (identity key, chat keys, trusted keys, messages,
+   files) is encrypted with a random data key. That key is itself wrapped by a key
+   derived from the password (PBKDF2, 600 000 rounds) and only lives in memory. */
+async function kdf(pw,salt){
+ const base=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function openVault(pw){
+ const name=P+me+':vault',raw=localStorage.getItem(name);
+ let dk;
+ if(raw){
+  const v=JSON.parse(raw);
+  const kek=await kdf(pw,unb64(v.s));
+  dk=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(v.i),additionalData:enc.encode(name)},kek,unb64(v.w)));
+ }else{
+  const salt=rnd(16),iv=rnd(12),kek=await kdf(pw,salt);
+  dk=rnd(32);
+  const w=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(name)},kek,dk);
+  localStorage.setItem(name,JSON.stringify({s:b64(salt),i:b64(iv),w:b64(w)}));
+ }
+ DK=await crypto.subtle.importKey('raw',dk,'AES-GCM',false,['encrypt','decrypt']);
+ dk.fill(0);
+}
+async function lseal(bytes,aad){
+ const iv=rnd(12);
+ const d=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(aad)},DK,bytes);
+ return{iv,d};
+}
+const lopen=(o,aad)=>crypto.subtle.decrypt({name:'AES-GCM',iv:o.iv,additionalData:enc.encode(aad)},DK,o.d);
+async function lsSet(name,obj){
+ const full=P+me+':'+name,o=await lseal(enc.encode(JSON.stringify(obj)),full);
+ localStorage.setItem(full,JSON.stringify({i:b64(o.iv),d:b64(o.d)}));
+}
+async function lsGet(name){
+ const full=P+me+':'+name,raw=localStorage.getItem(full);
+ if(!raw)return null;
+ try{
+  const o=JSON.parse(raw);
+  return JSON.parse(dec.decode(await lopen({iv:unb64(o.i),d:unb64(o.d)},full)));
+ }catch{return undefined}
+}
+async function loadStore(){
+ const id=await lsGet('id'),k=await lsGet('k'),p=await lsGet('p'),c=await lsGet('c'),x=await lsGet('x');
+ store={id:id||null,keys:k&&typeof k==='object'?k:{},pins:p&&typeof p==='object'?p:{},
+  cts:{c:c&&c.c&&typeof c.c==='object'?c.c:{},t:c&&c.t&&typeof c.t==='object'?c.t:{}},
+  dead:x&&typeof x==='object'?x:{}};
+ for(const d of Object.keys(store.dead))if(Date.now()-store.dead[d]>60*86400000)delete store.dead[d];
+ M={};
+ const pre=P+me+':m:';
+ for(const key of Object.keys(localStorage)){
+  if(!key.startsWith(pre))continue;
+  const cid=key.slice(pre.length),l=await lsGet('m:'+cid);
+  if(Array.isArray(l))M[cid]=l;
+ }
+}
+const keys=()=>store.keys;
+const saveKeys=()=>queue(()=>lsSet('k',store.keys));
+const savePins=()=>queue(()=>lsSet('p',store.pins));
+const saveCts=()=>queue(()=>lsSet('c',store.cts));
+const saveDead=()=>queue(()=>lsSet('x',store.dead));
+const saveMsgs=id=>queue(()=>M[id]?lsSet('m:'+id,M[id]):0);
+const setKey=(id,raw)=>{store.keys[id]=raw;saveKeys()};
+const msgs=id=>M[id]||[];
+const setMsgs=(id,l)=>{M[id]=l;saveMsgs(id)};
 const others=c=>c.members.filter(x=>x!==me);
-const label=c=>others(c).map(x=>'+'+x).join(' ');
+const nm=n=>store&&store.cts.c[n]||'+'+n;
+const label=c=>store.cts.t[c.id]||others(c).map(nm).join(', ');
+const title=c=>{const l=label(c);return chats.some(x=>x!==c&&label(x)===l)?l+' #'+c.id.slice(0,4):l};
 const note=t=>{$('#note').textContent=t;clearTimeout(nt);nt=setTimeout(()=>$('#note').textContent='',3000)};
 async function chatKey(id){
  if(keyCache.has(id))return keyCache.get(id);
@@ -211,30 +490,78 @@ function revokeUrls(prefix){
  for(const[k,u]of urls)if(!prefix||k.startsWith(prefix)){URL.revokeObjectURL(u);urls.delete(k)}
 }
 async function wipeChat(id,dropKey){
- try{localStorage.removeItem(kk('m:'+id))}catch{}
+ try{localStorage.removeItem(P+me+':m:'+id)}catch{}
+ delete M[id];
  try{await delRange('files',me+':'+id+':');await delRange('chunks',me+':'+id+':')}catch{}
- revokeUrls(id+':');
- if(dropKey){const k=keys();delete k[id];LS.set(kk('k'),k);keyCache.delete(id)}
+ revokeUrls(me+':'+id+':');
+ if(dropKey){
+  delete store.keys[id];saveKeys();keyCache.delete(id);
+  delete store.cts.t[id];saveCts();
+  for(const d of Object.keys(store.dead))if(d.startsWith(id+':'))delete store.dead[d];
+  saveDead();
+ }
  unread.delete(id);
  sig='';
 }
 async function wipeAll(withKeys){
- for(const k of Object.keys(localStorage))
-  if(k.startsWith(kk(withKeys?'':'m:')))localStorage.removeItem(k);
+ await wq;
+ const pre=P+me+':'+(withKeys?'':'m:');
+ for(const k of Object.keys(localStorage))if(k.startsWith(pre))localStorage.removeItem(k);
+ M={};
+ if(withKeys){keyCache.clear()}
  try{await delRange('files',me+':');await delRange('chunks',me+':')}catch{}
  revokeUrls();
  sig='';
 }
 
-/* ---------- écrans et compte ---------- */
-const VIEWS=['home','signup','login','made','app'];
+/* ---------- trust in other people's keys ---------- */
+const fpOf=async j=>hex(new Uint8Array(await crypto.subtle.digest('SHA-256',enc.encode(j.x+'.'+j.y))));
+async function getPubs(ids){
+ const{data,error}=await sb.rpc('get_pubs',{p_ids:ids});
+ return error||!Array.isArray(data)?null:data;
+}
+async function trust(id,pub){
+ const fp=await fpOf(pub),old=store.pins[id];
+ if(!old){store.pins[id]=fp;savePins();return true}
+ if(old===fp)return true;
+ if(declined.has(id+fp))return false;
+ if(confirm('The key of +'+id+' changed. Trust the new key?')){store.pins[id]=fp;savePins();return true}
+ declined.add(id+fp);
+ return false;
+}
+async function safetyNumber(a,b){
+ const[x,y]=[a,b].sort();
+ const h=new Uint8Array(await crypto.subtle.digest('SHA-256',enc.encode(x+y)));
+ let n=0n;
+ for(const v of h.slice(0,16))n=n*256n+BigInt(v);
+ return(n%(10n**30n)).toString().padStart(30,'0').match(/.{5}/g).join(' ');
+}
+async function showSafety(){
+ const c=chats.find(x=>x.id===cur);
+ if(!c)return;
+ const mine=await fpOf(ident.pub),lines=['Compare these numbers with each person, in person or by call:'];
+ for(const o of others(c)){
+  let fp=store.pins[o];
+  if(!fp){
+   const ps=await getPubs([o]);
+   if(!ps||!ps[0]||!validPub(ps[0].pub)||!await trust(o,ps[0].pub))continue;
+   fp=store.pins[o];
+  }
+  lines.push('+'+o+'  '+await safetyNumber(mine,fp));
+ }
+ alert(lines.join('\n'));
+}
+
+/* ---------- screens and account ---------- */
+const VIEWS=['home','signup','login','made','legal','app'];
 const show=id=>{for(const x of VIEWS)$('#'+x).hidden=x!==id;err('')};
 const err=t=>document.querySelectorAll('.err').forEach(e=>e.textContent=t||'');
-const pwOk=p=>p.length>=20&&p.length<=40;
+const pwOk=p=>p.length>=20&&p.length<=40&&new Set(p).size>=8;
+const fail=()=>{fails++;lockUntil=Date.now()+Math.min(60000,1000*2**fails);err('Wrong number or password')};
 
 async function signup(){
  const p=$('#p1').value;
- if(!pwOk(p))return err('Password: 20 to 40 characters');
+ if(!pwOk(p))return err('Password: 20 to 40 characters, not repetitive');
  if(p!==$('#p2').value)return err('Passwords do not match');
  err('');
  try{
@@ -244,10 +571,16 @@ async function signup(){
    if(error){if(/registered|exists/i.test(error.message))continue;throw error}
    if(!data.session)return err('Error: email confirmation is on');
    me=id;
-   ident=await newIdentity();
-   LS.set(kk('id'),ident);
+   await wipeAll(true);
+   await openVault(p);
+   await loadStore();
+   store.id=await newIdentity();
+   await lsSet('id',store.id);
+   ident=store.id;
    const r=await sb.from('profiles').insert({id,uid:data.user.id,pub:ident.pub});
    if(r.error)throw r.error;
+   $('#p1').value='';$('#p2').value='';
+   try{localStorage.setItem(P+'last',id)}catch{}
    $('#mn').textContent='+'+id;
    show('made');
    return;
@@ -256,25 +589,43 @@ async function signup(){
  }catch{err('Error')}
 }
 async function login(){
+ if(Date.now()<lockUntil)return err('Wait a moment');
  const id=digits($('#n').value),p=$('#p').value;
- if(id.length!==9||!pwOk(p))return err('Wrong number or password');
+ if(id.length!==9||!pwOk(p))return fail();
  err('');
  const{error}=await sb.auth.signInWithPassword({email:id+DOMAIN,password:p});
- if(error)return err('Wrong number or password');
- enter(id);
+ if(error)return fail();
+ fails=0;
+ me=id;
+ try{
+  try{await openVault(p)}catch{
+   if(!confirm('Local data cannot be opened. Erase it and continue?')){await sb.auth.signOut({scope:'local'});return}
+   await wipeAll(true);
+   await openVault(p);
+  }
+  await loadStore();
+  if(!store.id||!store.id.priv||!validPub(store.id.pub)){
+   store.id=await newIdentity();
+   await lsSet('id',store.id);
+   const r=await sb.from('profiles').update({pub:store.id.pub}).eq('id',me);
+   if(r.error)throw r.error;
+  }
+  ident=store.id;
+ }catch{
+  try{await sb.auth.signOut({scope:'local'})}catch{}
+  return err('Error');
+ }
+ $('#p').value='';
+ try{localStorage.setItem(P+'last',id)}catch{}
+ enter();
 }
-async function enter(id){
+async function enter(){
  if(entered)return;
  entered=true;
- me=id;
- ident=LS.get(kk('id'),null);
- if(!ident){
-  ident=await newIdentity();
-  LS.set(kk('id'),ident);
-  await sb.from('profiles').update({pub:ident.pub}).eq('id',me);
- }
  $('#me').textContent='+'+me;
  show('app');
+ bump();
+ sb.rpc('purge_old').then(()=>{},()=>{});
  await sync();
  sb.channel('z')
   .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'to_id=eq.'+me},sync)
@@ -288,36 +639,54 @@ async function leaveDevice(){
  try{await sb.auth.signOut({scope:'local'})}catch{}
  location.reload();
 }
+// auto-lock: the keys only live in memory, so reloading locks everything
+function bump(){lastAct=Date.now();clearTimeout(idleT);idleT=setTimeout(lock,IDLE)}
+function lock(){if(sending){bump();return}leaveDevice()}
 
-/* ---------- synchronisation ---------- */
+/* ---------- sync ---------- */
 async function applyNotice(n){
- if(!/^[0-9a-f]{64}$/.test(n.chat_id))return;
+ if(!HEX64.test(n.chat_id))return;
  if(n.kind==='clear')await wipeChat(n.chat_id,false);
  else if(n.kind==='del'){
   await wipeChat(n.chat_id,true);
   chats=chats.filter(c=>c.id!==n.chat_id);
   if(cur===n.chat_id)closeChat();
- }else if(n.kind==='purge'&&/^\d{9}$/.test(n.who||'')){
-  const l=msgs(n.chat_id);
-  for(const e of l)if(e.f===n.who&&e.fid){try{await del('files',me+':'+n.chat_id+':'+e.fid)}catch{}}
-  revokeUrls(n.chat_id+':');
-  setMsgs(n.chat_id,l.filter(e=>e.f!==n.who));
+ }else if(n.kind==='purge'&&NUM9.test(n.who||'')){
+  try{await delRange('files',me+':'+n.chat_id+':'+n.who+':');await delRange('chunks',me+':'+n.chat_id+':'+n.who+':')}catch{}
+  revokeUrls(me+':'+n.chat_id+':'+n.who+':');
+  setMsgs(n.chat_id,msgs(n.chat_id).filter(e=>e.f!==n.who));
   sig='';
+ }else if(n.kind==='msg'&&NUM9.test(n.who||'')&&HEX16.test(n.mid||'')){
+  store.dead[n.chat_id+':'+n.who+':'+n.mid]=Date.now();saveDead();
+  const e=msgs(n.chat_id).find(x=>x.i===n.mid&&x.f===n.who);
+  if(e)await dropMsg(n.chat_id,e);
  }
 }
-async function receiveFile(m,p){
- if(!/^[0-9a-f]{16}$/.test(p.fid)||!(p.n>=1&&p.n<=100))return null;
- const base=me+':'+m.chat_id+':'+p.fid;
- const mime=safeMime(String(p.mime||'')),name=cleanName(p.name);
- const e={sid:m.id,f:m.from_id,k:'f',fid:p.fid,name,mime,size:Number(p.size)||0,ts:Number(p.ts)||0};
- const parts=[];
- for(let i=0;i<p.n;i++){
-  const b=await get('chunks',base+':'+i);
-  if(!b){e.x=1;return e}
-  parts.push(b);
+async function dropMsg(cid,m){
+ if(m.k==='f'&&m.fid){
+  const base=fkey(cid,m.f,m.fid);
+  try{await del('files',base)}catch{}
+  revokeUrls(base);
  }
- await put('files',base,{blob:new Blob(parts,{type:mime}),name,mime,size:e.size});
- for(let i=0;i<p.n;i++)await del('chunks',base+':'+i);
+ setMsgs(cid,msgs(cid).filter(x=>x.i!==m.i));
+ sig='';
+}
+async function receiveFile(m,p){
+ const size=Number(p.size),n=Number(p.n);
+ if(!HEX16.test(p.fid)||!Number.isInteger(n)||n<1||n>100||!(size>=0&&size<=MAX))return null;
+ const base=fkey(m.chat_id,m.from_id,p.fid);
+ const mime=safeMime(String(p.mime||'')),name=cleanName(p.name);
+ const e={sid:m.id,i:p.i,f:m.from_id,k:'f',fid:p.fid,name,mime,size,ts:Number(p.ts)||0};
+ const parts=[];
+ for(let i=0;i<n;i++){
+  const v=await get('chunks',base+':'+i);
+  if(!v){e.x=1;return e}
+  parts.push(await lopen(v,'c:'+base+':'+i));
+ }
+ const all=(await new Blob(parts).arrayBuffer()).slice(0,size);
+ const s=await lseal(all,'f:'+base);
+ await put('files',base,{iv:s.iv,d:s.d,name,mime,size});
+ for(let i=0;i<n;i++)await del('chunks',base+':'+i);
  return e;
 }
 async function sync(){
@@ -326,29 +695,34 @@ async function sync(){
  busy=true;
  try{
   const{data:cs}=await sb.from('chats').select('id,members');
-  if(cs)chats=cs.map(c=>({id:c.id,members:c.members}));
+  if(cs)chats=cs.filter(c=>HEX64.test(c.id)&&Array.isArray(c.members)&&c.members.includes(me)&&c.members.every(x=>NUM9.test(x))).map(c=>({id:c.id,members:c.members}));
 
-  // ordres de nettoyage (vider / supprimer)
+  // cleanup orders (clear / delete / leave)
   const{data:ns}=await sb.from('notices').select('*').eq('to_id',me).order('id');
   if(ns&&ns.length){
    for(const n of ns){try{await applyNotice(n)}catch{}}
    await sb.from('notices').delete().in('id',ns.map(n=>n.id));
   }
 
-  // clés de conversation reçues : déchiffrées ici, puis retirées du serveur
+  // chat keys received: decrypted here, then removed from the server
   const{data:os}=await sb.from('key_offers').select('*').eq('to_id',me);
   for(const o of os||[]){
    try{
+    if(!HEX64.test(o.chat_id)||!NUM9.test(o.from_id))continue;
+    if(!chats.some(c=>c.id===o.chat_id&&c.members.includes(o.from_id)))continue;
     if(!keys()[o.chat_id]){
-     const{data:p}=await sb.from('profiles').select('pub').eq('id',o.from_id).maybeSingle();
+     const ps=await getPubs([o.from_id]),p=ps&&ps[0];
+     if(!p||!validPub(p.pub)||!await trust(o.from_id,p.pub))continue;
      const sh=await shared(ident.priv,p.pub);
-     setKey(o.chat_id,b64(await unseal(sh,o,o.chat_id)));
+     const raw=await unseal(sh,o,o.chat_id+':'+o.from_id+':'+me);
+     if(raw.byteLength!==32)continue;
+     setKey(o.chat_id,b64(raw));
     }
     await sb.from('key_offers').delete().eq('chat_id',o.chat_id).eq('to_id',me);
    }catch{}
   }
 
-  // messages reçus : déchiffrés ici, stockés en local, puis retirés du serveur
+  // messages received: decrypted here, stored encrypted locally, then removed from the server
   let last=0;
   for(;;){
    const{data:ms}=await sb.from('messages').select('*').eq('to_id',me).gt('id',last).order('id').limit(40);
@@ -356,29 +730,37 @@ async function sync(){
    const done=[];
    for(const m of ms){
     last=m.id;
+    if(!HEX64.test(m.chat_id)||!NUM9.test(m.from_id)){done.push(m.id);continue}
     const k=await chatKey(m.chat_id);
     if(!k)continue;
     try{
      if(m.fid){
-      if(!Number.isInteger(m.idx)||m.idx<0||m.idx>=100){done.push(m.id);continue}
+      if(!HEX16.test(m.fid)||!Number.isInteger(m.idx)||m.idx<0||m.idx>=100){done.push(m.id);continue}
       let buf=null;
-      try{buf=await unseal(k,m,m.chat_id+':'+m.fid+':'+m.idx)}catch{}
-      if(buf)await put('chunks',me+':'+m.chat_id+':'+m.fid+':'+m.idx,buf);
+      try{buf=await unseal(k,m,m.chat_id+':'+m.from_id+':'+m.fid+':'+m.idx)}catch{}
+      if(buf){
+       const key=fkey(m.chat_id,m.from_id,m.fid)+':'+m.idx,s=await lseal(buf,'c:'+key);
+       await put('chunks',key,{iv:s.iv,d:s.d});
+      }
       done.push(m.id);
       continue;
      }
      let p=null;
-     try{p=JSON.parse(dec.decode(await unseal(k,m,m.chat_id)))}catch{}
-     if(p){
+     try{p=JSON.parse(dec.decode(await unseal(k,m,m.chat_id+':'+m.from_id+':m')))}catch{}
+     if(p&&typeof p==='object'&&HEX16.test(p.i)){
       const l=msgs(m.chat_id);
-      if(!l.some(x=>x.sid===m.id)){
+      if(store.dead[m.chat_id+':'+m.from_id+':'+p.i]){
+       if(p.k==='f'&&HEX16.test(p.fid)){
+        const b=fkey(m.chat_id,m.from_id,p.fid);
+        for(let q=0;q<Math.min(100,Number(p.n)||0);q++){try{await del('chunks',b+':'+q)}catch{}}
+       }
+      }else if(!l.some(x=>x.i===p.i)){
        let e=null;
        if(p.k==='f')e=await receiveFile(m,p);
-       else if(typeof p.t==='string')e={sid:m.id,f:m.from_id,k:'t',t:p.t,ts:Number(p.ts)||0};
+       else if(typeof p.t==='string')e={sid:m.id,i:p.i,f:m.from_id,k:'t',t:p.t.slice(0,4000),ts:Number(p.ts)||0};
        if(e){
-        l.push(e);
-        l.sort((a,b)=>a.ts-b.ts);
-        setMsgs(m.chat_id,l);
+        const nl=l.concat([e]).sort((a,b)=>a.ts-b.ts);
+        setMsgs(m.chat_id,nl);
         if(m.chat_id!==cur)unread.add(m.chat_id);
        }
       }
@@ -397,22 +779,20 @@ async function sync(){
  if(again){again=false;sync()}
 }
 
-/* ---------- envoi ---------- */
+/* ---------- sending ---------- */
 async function post(c,p){
  const k=await chatKey(c.id);
  if(!k)return false;
- const s=await seal(k,enc.encode(JSON.stringify(p)),c.id);
+ const s=await seal(k,padText(JSON.stringify(p)),c.id+':'+me+':m');
  const r=await sb.from('messages').insert(others(c).map(o=>({chat_id:c.id,from_id:me,to_id:o,iv:s.iv,data:s.data})));
  return !r.error;
 }
 async function sendText(t){
  const c=chats.find(x=>x.id===cur);
  if(!c||!t)return;
- const ts=Date.now();
- if(!await post(c,{k:'t',t,ts})){sync();return note('Error')}
- const l=msgs(c.id);
- l.push({sid:'l'+hex(rnd(6)),f:me,k:'t',t,ts});
- setMsgs(c.id,l);
+ const ts=Date.now(),i=hex(rnd(8));
+ if(!await post(c,{k:'t',t,ts,i})){sync();return note('Error')}
+ setMsgs(c.id,msgs(c.id).concat([{sid:'l'+hex(rnd(6)),i,f:me,k:'t',t,ts}]));
  renderMsgs();
 }
 async function shrink(f){
@@ -441,20 +821,20 @@ async function sendFile(c,f){
  let ok=true;
  for(let i=0;i<n&&ok;i+=4){
   await Promise.all([0,1,2,3].filter(j=>i+j<n).map(async j=>{
-   const idx=i+j;
-   const s=await seal(k,buf.slice(idx*CH,(idx+1)*CH),c.id+':'+fid+':'+idx);
+   const idx=i+j,part=new Uint8Array(CH);   // every chunk is padded to the same size
+   part.set(new Uint8Array(buf,idx*CH,Math.min(CH,buf.byteLength-idx*CH)));
+   const s=await seal(k,part,c.id+':'+me+':'+fid+':'+idx);
    const r=await sb.from('messages').insert(rec.map(o=>({chat_id:c.id,from_id:me,to_id:o,iv:s.iv,data:s.data,fid,idx,n})));
    if(r.error)ok=false;
   }));
   $('#tx').placeholder=Math.min(i+4,n)+'/'+n;
  }
  if(!ok)return note('Error');
- const ts=Date.now();
- if(!await post(c,{k:'f',fid,name,mime,size:blob.size,n,ts}))return note('Error');
- await put('files',me+':'+c.id+':'+fid,{blob:new Blob([buf],{type:mime}),name,mime,size:blob.size});
- const l=msgs(c.id);
- l.push({sid:'l'+hex(rnd(6)),f:me,k:'f',fid,name,mime,size:blob.size,ts});
- setMsgs(c.id,l);
+ const ts=Date.now(),mid=hex(rnd(8));
+ if(!await post(c,{k:'f',fid,name,mime,size:blob.size,n,ts,i:mid}))return note('Error');
+ const base=fkey(c.id,me,fid),s=await lseal(buf,'f:'+base);
+ await put('files',base,{iv:s.iv,d:s.d,name,mime,size:blob.size});
+ setMsgs(c.id,msgs(c.id).concat([{sid:'l'+hex(rnd(6)),i:mid,f:me,k:'f',fid,name,mime,size:blob.size,ts}]));
  renderMsgs();
 }
 async function sendFiles(list){
@@ -466,26 +846,45 @@ async function sendFiles(list){
  $('#tx').placeholder='';
 }
 
-/* ---------- conversations ---------- */
-async function start(raw){
- const ids=[...new Set(raw.match(/\d{9}/g)||[])].filter(x=>x!==me);
- if(!ids.length||ids.length>20)return note('Error');
- const same=chats.find(c=>c.members.length===ids.length+1&&ids.every(i=>c.members.includes(i)));
- if(same)return open(same.id);
- const{data:ps}=await sb.from('profiles').select('id,pub').in('id',ids);
- if(!ps||ps.length!==ids.length)return note('Not found');
+/* ---------- chats ---------- */
+function resolve(raw){
+ const byName=new Map(Object.entries(store.cts.c).map(([n,v])=>[v.toLowerCase(),n]));
+ const out=[];
+ for(const seg of raw.split(',')){
+  const t=seg.trim();
+  if(!t)continue;
+  if(byName.has(t.toLowerCase())){out.push(byName.get(t.toLowerCase()));continue}
+  for(const w of t.split(/\s+/)){
+   const d=digits(w);
+   if(d.length===9)out.push(d);
+   else if(byName.has(w.toLowerCase()))out.push(byName.get(w.toLowerCase()));
+   else return null;
+  }
+ }
+ return[...new Set(out)].filter(x=>x!==me);
+}
+function startOrOpen(n){
+ const ex=chats.find(c=>c.members.length===2&&c.members.includes(n));
+ if(ex)open(ex.id);else start([n]);
+}
+async function start(ids){
+ if(!ids||!ids.length||ids.length>20)return note('Error');
+ const ps=await getPubs(ids);
+ if(!ps||ps.length!==ids.length||!ps.every(p=>NUM9.test(p.id)&&validPub(p.pub)))return note('Not found');
+ for(const p of ps)if(!await trust(p.id,p.pub))return note('Key not trusted');
  const id=hex(rnd(32)),raw32=rnd(32);
  let r=await sb.from('chats').insert({id,members:[me,...ids]});
  if(r.error)return note('Error');
  const offers=[];
  for(const p of ps){
   const sh=await shared(ident.priv,p.pub);
-  const w=await seal(sh,raw32,id);
+  const w=await seal(sh,raw32,id+':'+me+':'+p.id);
   offers.push({chat_id:id,to_id:p.id,from_id:me,iv:w.iv,data:w.data});
  }
  r=await sb.from('key_offers').insert(offers);
  if(r.error)return note('Error');
  setKey(id,b64(raw32));
+ raw32.fill(0);
  await sync();
  open(id);
 }
@@ -495,7 +894,7 @@ function open(id){
  sig='';
  $('#app').classList.add('open');
  const c=chats.find(x=>x.id===id);
- $('#who').textContent=c?label(c):'';
+ $('#who').textContent=c?title(c):'';
  refreshInput();
  renderList();
  renderMsgs();
@@ -531,26 +930,26 @@ async function removeChat(){
  closeChat();
 }
 
-/* ---------- affichage ---------- */
+/* ---------- display (text only goes through textContent) ---------- */
 function renderList(){
  const ul=$('#list');
  ul.textContent='';
  for(const c of chats){
   const li=document.createElement('li');
-  li.textContent=label(c)+(unread.has(c.id)?' •':'');
+  li.textContent=title(c)+(unread.has(c.id)?' •':'');
   if(c.id===cur)li.className='on';
   li.onclick=()=>open(c.id);
   ul.append(li);
  }
 }
 const scrollEnd=()=>{const b=$('#msgs');b.scrollTop=b.scrollHeight};
-async function fileURL(chat,fid){
- const key=chat+':'+fid;
- if(urls.has(key))return urls.get(key);
- const r=await get('files',me+':'+key);
+async function fileURL(chat,from,fid){
+ const base=fkey(chat,from,fid);
+ if(urls.has(base))return urls.get(base);
+ const r=await get('files',base);
  if(!r)return null;
- const u=URL.createObjectURL(r.blob);
- urls.set(key,u);
+ const u=URL.createObjectURL(new Blob([await lopen(r,'f:'+base)],{type:safeMime(r.mime)}));
+ urls.set(base,u);
  return u;
 }
 function dlButton(m,chat){
@@ -558,7 +957,7 @@ function dlButton(m,chat){
  b.className='dl';
  b.textContent=(m.name||'file')+' · '+fmt(m.size);
  b.onclick=async()=>{
-  const u=await fileURL(chat,m.fid);
+  const u=await fileURL(chat,m.f,m.fid);
   if(!u)return;
   const a=document.createElement('a');
   a.href=u;a.download=m.name||'file';a.click();
@@ -573,13 +972,13 @@ function fileEl(m,chat){
   const i=document.createElement('img');
   i.onload=()=>{if(stick)scrollEnd()};
   i.onerror=()=>box.replaceChildren(dlButton(m,chat));
-  fileURL(chat,m.fid).then(u=>{if(u)i.src=u;else box.textContent='—'});
+  fileURL(chat,m.f,m.fid).then(u=>{if(u)i.src=u;else box.textContent='—'}).catch(()=>{box.textContent='—'});
   box.append(i);
  }else if(VID.test(mime)){
   const v=document.createElement('video');
   v.controls=true;v.preload='metadata';
   v.onerror=()=>box.replaceChildren(dlButton(m,chat));
-  fileURL(chat,m.fid).then(u=>{if(u)v.src=u;else box.textContent='—'});
+  fileURL(chat,m.f,m.fid).then(u=>{if(u)v.src=u;else box.textContent='—'}).catch(()=>{box.textContent='—'});
   box.append(v);
  }else box.append(dlButton(m,chat));
  return box;
@@ -596,31 +995,35 @@ function renderMsgs(){
  for(const m of l){
   const d=document.createElement('div');
   d.className='m'+(m.f===me?' me':'');
+  d.oncontextmenu=ev=>{ev.preventDefault();menuFor(ev.clientX,ev.clientY,m)};
+  d.ontouchstart=ev=>{const t=ev.touches[0];clearTimeout(lp);lp=setTimeout(()=>menuFor(t.clientX,t.clientY,m),600)};
+  d.ontouchend=d.ontouchmove=d.ontouchcancel=()=>clearTimeout(lp);
   if(group&&m.f!==me){
    const h=document.createElement('div');
-   h.className='s';h.textContent='+'+m.f;
+   h.className='s';h.textContent=nm(m.f);
    d.append(h);
   }
   if(m.k==='f')d.append(fileEl(m,cur));
-  else d.append(document.createTextNode(m.t));
+  else d.append(document.createTextNode(String(m.t)));
   box.append(d);
  }
  scrollEnd();
 }
 $('#msgs').onscroll=()=>{const b=$('#msgs');stick=b.scrollHeight-b.scrollTop-b.clientHeight<80};
 
-/* ---------- événements ---------- */
+/* ---------- events ---------- */
 $('#g-up').onclick=()=>show('signup');
 $('#g-in').onclick=()=>show('login');
 document.querySelectorAll('.bk').forEach(b=>b.onclick=()=>show('home'));
 $('#fu').onsubmit=e=>{e.preventDefault();signup()};
 $('#fl').onsubmit=e=>{e.preventDefault();login()};
-$('#ok').onclick=()=>enter(me);
-$('#nf').onsubmit=e=>{e.preventDefault();const v=$('#no').value;$('#no').value='';start(v)};
+$('#ok').onclick=()=>enter();
+$('#nf').onsubmit=e=>{e.preventDefault();const v=$('#no').value;$('#no').value='';start(resolve(v))};
 $('#sf').onsubmit=e=>{e.preventDefault();const t=$('#tx').value.trim();$('#tx').value='';sendText(t)};
 $('#att').onclick=()=>$('#fi').click();
 $('#fi').onchange=e=>{const l=[...e.target.files];e.target.value='';sendFiles(l)};
 $('#back').onclick=closeChat;
+$('#sn').onclick=showSafety;
 $('#clr').onclick=clearChat;
 $('#rm').onclick=removeChat;
 $('#mb').onclick=()=>{$('#menu').hidden=!$('#menu').hidden};
@@ -645,10 +1048,120 @@ $('#m-acc').onclick=async()=>{
  leaveDevice();
 };
 $('#m-out').onclick=leaveDevice;
+['pointerdown','keydown','touchstart','wheel'].forEach(e=>addEventListener(e,()=>{if(entered)bump()},{passive:true,capture:true}));
+document.addEventListener('visibilitychange',()=>{
+ document.documentElement.classList.toggle('hid',document.hidden);
+ if(!document.hidden&&entered&&Date.now()-lastAct>IDLE)lock();
+});
 
-(async()=>{
- const{data:{session}}=await sb.auth.getSession();
- if(session)enter(session.user.email.split('@')[0]);else show('home');
+/* ---------- right-click menu: delete a message ---------- */
+let lp;
+const hideMenu=()=>{$('#cm').hidden=true};
+function menuFor(x,y,m){
+ const cm=$('#cm');
+ cm.textContent='';
+ const add=(t,f)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{hideMenu();f()};cm.append(b)};
+ if(m.k==='t')add('Copy',()=>{try{navigator.clipboard.writeText(String(m.t)).catch(()=>{})}catch{}});
+ add('Delete for me',()=>delMsg(m,false));
+ if(m.f===me)add('Delete for everyone',()=>delMsg(m,true));
+ cm.hidden=false;
+ cm.style.left=Math.max(4,Math.min(x,innerWidth-cm.offsetWidth-4))+'px';
+ cm.style.top=Math.max(4,Math.min(y,innerHeight-cm.offsetHeight-4))+'px';
+}
+async function delMsg(m,all){
+ const c=chats.find(x=>x.id===cur);
+ if(!c)return;
+ if(all){
+  if(!confirm('Delete this message for everyone?'))return;
+  const{error}=await sb.rpc('delete_msg',{p_chat:c.id,p_mid:m.i});
+  if(error)return note('Error');
+ }
+ await dropMsg(c.id,m);
+ renderMsgs();
+}
+document.addEventListener('click',hideMenu);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')hideMenu()});
+document.addEventListener('scroll',hideMenu,true);
+addEventListener('blur',hideMenu);
+
+/* ---------- contacts and local titles (this device only) ---------- */
+const mkBtn=(t,f)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.onclick=f;return b};
+const cleanLabel=v=>String(v).trim().slice(0,40).replace(/,/g,' ');
+function renderContacts(){
+ const ul=$('#cl');
+ ul.textContent='';
+ const es=Object.entries(store.cts.c).sort((a,b)=>a[1].localeCompare(b[1]));
+ for(const[n,name]of es){
+  const li=document.createElement('li'),sp=document.createElement('span');
+  sp.textContent=name+' +'+n;
+  li.append(sp,
+   mkBtn('→',()=>{showContacts(false);startOrOpen(n)}),
+   mkBtn('✎',()=>{
+    const v=prompt('Name (this device only)',name);
+    if(v===null)return;
+    const t=cleanLabel(v);
+    if(t)store.cts.c[n]=t;else delete store.cts.c[n];
+    saveCts();renderContacts();renderList();
+   }),
+   mkBtn('×',()=>{delete store.cts.c[n];saveCts();renderContacts();renderList()}));
+  ul.append(li);
+ }
+}
+function showContacts(on){
+ $('#cts').hidden=!on;
+ $('#list').hidden=on;
+ if(on)renderContacts();
+}
+$('#m-cts').onclick=()=>{$('#menu').hidden=true;showContacts($('#cts').hidden)};
+$('#cf').onsubmit=e=>{
+ e.preventDefault();
+ const n=digits($('#cnum').value),t=cleanLabel($('#cname').value);
+ if(n.length!==9||n===me||!t)return note('Error');
+ store.cts.c[n]=t;saveCts();
+ $('#cnum').value='';$('#cname').value='';
+ renderContacts();renderList();
+};
+$('#ed').onclick=()=>{
+ const c=chats.find(x=>x.id===cur);
+ if(!c)return;
+ const v=prompt('Chat name (this device only, empty = reset)',store.cts.t[c.id]||'');
+ if(v===null)return;
+ const t=cleanLabel(v);
+ if(t)store.cts.t[c.id]=t;else delete store.cts.t[c.id];
+ saveCts();
+ $('#who').textContent=title(c);
+ renderList();
+};
+
+/* ---------- privacy page (Chinese) and source code ---------- */
+let prevView='home';
+document.querySelectorAll('.lg').forEach(b=>b.onclick=()=>{
+ prevView=VIEWS.find(x=>!$('#'+x).hidden)||'home';
+ show('legal');
+ $('#legal').scrollTop=0;
+});
+const backLegal=()=>show(prevView==='legal'?'home':prevView);
+$('#lg-back').onclick=backLegal;
+$('#lg-back2').onclick=backLegal;
+async function toggleSrc(){
+ const pre=$('#srcv');
+ if(!pre.hidden){pre.hidden=true;return}
+ try{
+  const r=await fetch(location.pathname,{cache:'no-store'});
+  if(!r.ok)throw 0;
+  pre.textContent=await r.text();
+ }catch{pre.textContent='无法读取 / unavailable'}
+ pre.hidden=false;
+ pre.scrollIntoView();
+}
+$('#src').onclick=toggleSrc;
+$('#src2').onclick=toggleSrc;
+
+(()=>{
+ let l=null;
+ try{l=localStorage.getItem(P+'last')}catch{}
+ if(l&&NUM9.test(l))$('#n').value='+'+l;
+ show(l?'login':'home');
 })();
 </script>
 </body>
