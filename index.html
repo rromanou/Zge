@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" translate="no">
+<html lang="en" translate="no">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -58,15 +58,15 @@ aside header button,#conv header button{padding:4px 10px}
 
 <main id="home" class="v" hidden>
  <b class="t">Zge</b>
- <button id="g-up">Créer un compte</button>
- <button id="g-in">Connexion</button>
+ <button id="g-up">Create account</button>
+ <button id="g-in">Log in</button>
 </main>
 
 <main id="signup" class="v" hidden>
  <form id="fu">
-  <input id="p1" type="password" maxlength="40" placeholder="mot de passe (20 à 40 caractères)" autocomplete="new-password">
-  <input id="p2" type="password" maxlength="40" placeholder="répéter le mot de passe" autocomplete="new-password">
-  <button>Créer</button>
+  <input id="p1" type="password" maxlength="40" placeholder="password (20 to 40 characters)" autocomplete="new-password">
+  <input id="p2" type="password" maxlength="40" placeholder="repeat password" autocomplete="new-password">
+  <button>Create</button>
   <div class="err"></div>
   <button type="button" class="bk">←</button>
  </form>
@@ -75,17 +75,17 @@ aside header button,#conv header button{padding:4px 10px}
 <main id="login" class="v" hidden>
  <form id="fl">
   <input id="n" placeholder="+000000000" inputmode="numeric" autocomplete="username">
-  <input id="p" type="password" maxlength="40" placeholder="mot de passe" autocomplete="current-password">
-  <button>Entrer</button>
+  <input id="p" type="password" maxlength="40" placeholder="password" autocomplete="current-password">
+  <button>Enter</button>
   <div class="err"></div>
   <button type="button" class="bk">←</button>
  </form>
 </main>
 
 <main id="made" class="v" hidden>
- <span class="sub">Votre numéro</span>
+ <span class="sub">Your number</span>
  <b class="n" id="mn"></b>
- <span class="sub">Notez-le. Il ne peut pas être récupéré.</span>
+ <span class="sub">Write it down. It cannot be recovered.</span>
  <button id="ok">OK</button>
 </main>
 
@@ -93,10 +93,10 @@ aside header button,#conv header button{padding:4px 10px}
  <aside>
   <header><span id="me"></span><button id="mb">⋯</button></header>
   <div id="menu" hidden>
-   <button id="m-cache">Vider le cache</button>
-   <button id="m-dev">Effacer l'appareil</button>
-   <button id="m-acc">Supprimer le compte</button>
-   <button id="m-out">Déconnexion</button>
+   <button id="m-cache">Clear cache</button>
+   <button id="m-dev">Erase device</button>
+   <button id="m-acc">Delete account</button>
+   <button id="m-out">Log out</button>
   </div>
   <form id="nf"><input id="no" placeholder="+000000000 +000000000" autocomplete="off"><button>+</button></form>
   <div id="note"></div>
@@ -105,7 +105,7 @@ aside header button,#conv header button{padding:4px 10px}
  <section id="conv">
   <header>
    <button id="back">←</button><span id="who"></span>
-   <span><button id="clr">Vider</button> <button id="rm">Supprimer</button></span>
+   <span><button id="clr">Clear</button> <button id="rm">Delete</button></span>
   </header>
   <div id="msgs"></div>
   <form id="sf">
@@ -119,8 +119,8 @@ aside header button,#conv header button{padding:4px 10px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL='https://taewxhmkivlmromyeslx.supabase.co';
-const SUPABASE_KEY='sb_publishable_Q2ixADbOElHtMihV4AxI8w_X93EfSEO';
+const SUPABASE_URL='https://VOTRE-PROJET.supabase.co';
+const SUPABASE_KEY='VOTRE_CLE_ANON';
 
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=s=>document.querySelector(s);
@@ -146,8 +146,8 @@ function rand9(){
  return String(a[0]%1000000000).padStart(9,'0');
 }
 const safeMime=m=>IMG.test(m)||VID.test(m)?m:'application/octet-stream';
-const cleanName=n=>String(n||'fichier').slice(0,120).replace(/[\\\/\0]/g,'_');
-const fmt=n=>n>1e6?(n/1e6).toFixed(1)+' Mo':Math.max(1,Math.ceil(n/1e3))+' Ko';
+const cleanName=n=>String(n||'file').slice(0,120).replace(/[\\\/\0]/g,'_');
+const fmt=n=>n>1e6?(n/1e6).toFixed(1)+' MB':Math.max(1,Math.ceil(n/1e3))+' KB';
 
 /* ---------- stockage local des fichiers (IndexedDB) ---------- */
 let dbp;
@@ -234,15 +234,15 @@ const pwOk=p=>p.length>=20&&p.length<=40;
 
 async function signup(){
  const p=$('#p1').value;
- if(!pwOk(p))return err('Mot de passe : 20 à 40 caractères');
- if(p!==$('#p2').value)return err('Les mots de passe sont différents');
+ if(!pwOk(p))return err('Password: 20 to 40 characters');
+ if(p!==$('#p2').value)return err('Passwords do not match');
  err('');
  try{
   for(let i=0;i<6;i++){
    const id=rand9();
    const{data,error}=await sb.auth.signUp({email:id+DOMAIN,password:p});
    if(error){if(/registered|exists/i.test(error.message))continue;throw error}
-   if(!data.session)return err('Erreur : confirmation email active');
+   if(!data.session)return err('Error: email confirmation is on');
    me=id;
    ident=await newIdentity();
    LS.set(kk('id'),ident);
@@ -252,15 +252,15 @@ async function signup(){
    show('made');
    return;
   }
-  err('Erreur');
- }catch{err('Erreur')}
+  err('Error');
+ }catch{err('Error')}
 }
 async function login(){
  const id=digits($('#n').value),p=$('#p').value;
- if(id.length!==9||!pwOk(p))return err('Numéro ou mot de passe incorrect');
+ if(id.length!==9||!pwOk(p))return err('Wrong number or password');
  err('');
  const{error}=await sb.auth.signInWithPassword({email:id+DOMAIN,password:p});
- if(error)return err('Numéro ou mot de passe incorrect');
+ if(error)return err('Wrong number or password');
  enter(id);
 }
 async function enter(id){
@@ -409,7 +409,7 @@ async function sendText(t){
  const c=chats.find(x=>x.id===cur);
  if(!c||!t)return;
  const ts=Date.now();
- if(!await post(c,{k:'t',t,ts})){sync();return note('Erreur')}
+ if(!await post(c,{k:'t',t,ts})){sync();return note('Error')}
  const l=msgs(c.id);
  l.push({sid:'l'+hex(rnd(6)),f:me,k:'t',t,ts});
  setMsgs(c.id,l);
@@ -427,14 +427,14 @@ async function shrink(f){
  return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(),'image/jpeg',0.8));
 }
 async function sendFile(c,f){
- if(f.size>MAX)return note('10 Mo max');
+ if(f.size>MAX)return note('10 MB max');
  const k=await chatKey(c.id);
  if(!k)return;
- let blob=f,name=f.name||'fichier',mime=f.type||'';
+ let blob=f,name=f.name||'file',mime=f.type||'';
  if(/^image\/(jpeg|png|webp|bmp)$/.test(mime)){
   try{blob=await shrink(f);mime='image/jpeg';name=name.replace(/\.[^.]*$/,'')+'.jpg'}catch{}
  }
- if(blob.size>MAX)return note('10 Mo max');
+ if(blob.size>MAX)return note('10 MB max');
  mime=safeMime(mime);name=cleanName(name);
  const buf=await blob.arrayBuffer(),rec=others(c);
  const n=Math.max(1,Math.ceil(buf.byteLength/CH)),fid=hex(rnd(8));
@@ -448,9 +448,9 @@ async function sendFile(c,f){
   }));
   $('#tx').placeholder=Math.min(i+4,n)+'/'+n;
  }
- if(!ok)return note('Erreur');
+ if(!ok)return note('Error');
  const ts=Date.now();
- if(!await post(c,{k:'f',fid,name,mime,size:blob.size,n,ts}))return note('Erreur');
+ if(!await post(c,{k:'f',fid,name,mime,size:blob.size,n,ts}))return note('Error');
  await put('files',me+':'+c.id+':'+fid,{blob:new Blob([buf],{type:mime}),name,mime,size:blob.size});
  const l=msgs(c.id);
  l.push({sid:'l'+hex(rnd(6)),f:me,k:'f',fid,name,mime,size:blob.size,ts});
@@ -461,7 +461,7 @@ async function sendFiles(list){
  const c=chats.find(x=>x.id===cur);
  if(!c||sending)return;
  sending=true;
- try{for(const f of list)await sendFile(c,f)}catch{note('Erreur')}
+ try{for(const f of list)await sendFile(c,f)}catch{note('Error')}
  sending=false;
  $('#tx').placeholder='';
 }
@@ -469,14 +469,14 @@ async function sendFiles(list){
 /* ---------- conversations ---------- */
 async function start(raw){
  const ids=[...new Set(raw.match(/\d{9}/g)||[])].filter(x=>x!==me);
- if(!ids.length||ids.length>20)return note('Erreur');
+ if(!ids.length||ids.length>20)return note('Error');
  const same=chats.find(c=>c.members.length===ids.length+1&&ids.every(i=>c.members.includes(i)));
  if(same)return open(same.id);
  const{data:ps}=await sb.from('profiles').select('id,pub').in('id',ids);
- if(!ps||ps.length!==ids.length)return note('Introuvable');
+ if(!ps||ps.length!==ids.length)return note('Not found');
  const id=hex(rnd(32)),raw32=rnd(32);
  let r=await sb.from('chats').insert({id,members:[me,...ids]});
- if(r.error)return note('Erreur');
+ if(r.error)return note('Error');
  const offers=[];
  for(const p of ps){
   const sh=await shared(ident.priv,p.pub);
@@ -484,7 +484,7 @@ async function start(raw){
   offers.push({chat_id:id,to_id:p.id,from_id:me,iv:w.iv,data:w.data});
  }
  r=await sb.from('key_offers').insert(offers);
- if(r.error)return note('Erreur');
+ if(r.error)return note('Error');
  setKey(id,b64(raw32));
  await sync();
  open(id);
@@ -514,18 +514,18 @@ function refreshInput(){
 }
 async function clearChat(){
  const c=chats.find(x=>x.id===cur);
- if(!c||!confirm('Vider cette discussion pour tous ?'))return;
+ if(!c||!confirm('Clear this chat for everyone?'))return;
  const{error}=await sb.rpc('clear_chat',{p_chat:c.id});
- if(error)return note('Erreur');
+ if(error)return note('Error');
  await wipeChat(c.id,false);
  renderMsgs();
 }
 async function removeChat(){
  const c=chats.find(x=>x.id===cur);
  if(!c)return;
- if(!confirm(c.members.length>2?'Quitter ce groupe ?':'Supprimer cette discussion ?'))return;
+ if(!confirm(c.members.length>2?'Leave this group?':'Delete this chat?'))return;
  const{error}=await sb.rpc('leave_chat',{p_chat:c.id});
- if(error)return note('Erreur');
+ if(error)return note('Error');
  await wipeChat(c.id,true);
  chats=chats.filter(x=>x.id!==c.id);
  closeChat();
@@ -556,12 +556,12 @@ async function fileURL(chat,fid){
 function dlButton(m,chat){
  const b=document.createElement('button');
  b.className='dl';
- b.textContent=(m.name||'fichier')+' · '+fmt(m.size);
+ b.textContent=(m.name||'file')+' · '+fmt(m.size);
  b.onclick=async()=>{
   const u=await fileURL(chat,m.fid);
   if(!u)return;
   const a=document.createElement('a');
-  a.href=u;a.download=m.name||'fichier';a.click();
+  a.href=u;a.download=m.name||'file';a.click();
  };
  return b;
 }
@@ -626,21 +626,21 @@ $('#rm').onclick=removeChat;
 $('#mb').onclick=()=>{$('#menu').hidden=!$('#menu').hidden};
 $('#m-cache').onclick=async()=>{
  $('#menu').hidden=true;
- if(!confirm('Vider les messages et fichiers de cet appareil ?'))return;
+ if(!confirm('Clear messages and files on this device?'))return;
  await wipeAll(false);
  renderMsgs();
 };
 $('#m-dev').onclick=async()=>{
  $('#menu').hidden=true;
- if(!confirm('Effacer messages et clés de cet appareil ?'))return;
+ if(!confirm('Erase messages and keys on this device?'))return;
  await wipeAll(true);
  leaveDevice();
 };
 $('#m-acc').onclick=async()=>{
  $('#menu').hidden=true;
- if(!confirm('Supprimer le compte et ses discussions ?'))return;
+ if(!confirm('Delete the account and its chats?'))return;
  const{error}=await sb.rpc('delete_account');
- if(error)return note('Erreur');
+ if(error)return note('Error');
  await wipeAll(true);
  leaveDevice();
 };
