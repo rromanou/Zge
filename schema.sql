@@ -44,10 +44,29 @@ create table if not exists notices (
   created_at timestamptz not null default now()
 );
 
+-- numéros bloqués (qui a bloqué qui)
+create table if not exists blocks (
+  owner      text not null,
+  blocked    text not null,
+  created_at timestamptz not null default now(),
+  primary key (owner, blocked)
+);
+
+-- compteurs de limitation (qui, quelle action, combien de fois dans la fenêtre)
+create table if not exists rl (
+  who text   not null,
+  k   text   not null,
+  w   bigint not null,
+  n   int    not null default 0,
+  t   timestamptz not null default now(),
+  primary key (who, k, w)
+);
+
 alter table messages    add column if not exists fid text;
 alter table messages    add column if not exists idx int;
 alter table messages    add column if not exists n   int;
 alter table chats       add column if not exists created_at timestamptz not null default now();
+alter table chats       add column if not exists creator text;
 alter table key_offers  add column if not exists created_at timestamptz not null default now();
 alter table notices     add column if not exists mid text;
 
@@ -67,9 +86,11 @@ alter table chats drop constraint if exists chats_id_fmt;
 alter table chats drop constraint if exists chats_members_check;
 alter table chats drop constraint if exists chats_members_size;
 alter table chats drop constraint if exists chats_members_fmt;
+alter table chats drop constraint if exists chats_creator_fmt;
 alter table chats add  constraint chats_id_fmt       check (id ~ '^[0-9a-f]{64}$');
 alter table chats add  constraint chats_members_size check (array_length(members, 1) between 2 and 21);
 alter table chats add  constraint chats_members_fmt  check (array_to_string(members, ',') ~ '^[0-9]{9}(,[0-9]{9})*$');
+alter table chats add  constraint chats_creator_fmt  check (creator is null or creator ~ '^[0-9]{9}$');
 
 alter table key_offers drop constraint if exists key_offers_data_check;
 alter table key_offers drop constraint if exists key_offers_data_len;
@@ -94,13 +115,21 @@ alter table notices drop constraint if exists notices_kind_check;
 alter table notices drop constraint if exists notices_kind_fmt;
 alter table notices drop constraint if exists notices_fmt;
 alter table notices add  constraint notices_kind_fmt check (kind in ('clear', 'del', 'purge', 'msg'));
-alter table notices add  constraint notices_fmt      check (to_id ~ '^[0-9]{9}$' and chat_id ~ '^[0-9a-f]{64}$' and (who is null or who ~ '^[0-9]{9}$') and (mid is null or mid ~ '^[0-9a-f]{16}$'));
+alter table notices add  constraint notices_fmt      check (to_id ~ '^[0-9]{9}$' and chat_id ~ '^[0-9a-f]{64}$'
+                                                            and (who is null or who ~ '^[0-9]{9}$') and (mid is null or mid ~ '^[0-9a-f]{16}$'));
+
+alter table blocks drop constraint if exists blocks_fmt;
+alter table blocks add  constraint blocks_fmt check (owner ~ '^[0-9]{9}$' and blocked ~ '^[0-9]{9}$' and owner <> blocked);
 
 create index if not exists messages_to_id_idx    on messages (to_id);
+create index if not exists messages_pair_idx     on messages (to_id, from_id);
 create index if not exists messages_from_idx     on messages (from_id, created_at);
 create index if not exists messages_created_idx  on messages (created_at);
 create index if not exists notices_to_id_idx     on notices (to_id);
+create index if not exists key_offers_from_idx   on key_offers (from_id, created_at);
 create index if not exists chats_members_idx     on chats using gin (members);
+create index if not exists chats_creator_idx     on chats (creator, created_at);
+create index if not exists rl_t_idx              on rl (t);
 
 /* ---------- identité ---------- */
 
@@ -108,16 +137,43 @@ create or replace function public.me() returns text
 language sql stable security definer set search_path = public as
 $$ select id from public.profiles where uid = auth.uid() $$;
 
+/* ---------- limitation par utilisateur (anti-abus / anti-saturation) ---------- */
+
+create or replace function public._rl(p_k text, p_max int, p_secs int, p_weight int default 1) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  v text := public.me();
+  b bigint;
+  c int;
+begin
+  if v is null then
+    raise exception 'denied';
+  end if;
+  b := floor(extract(epoch from now()) / p_secs);
+  insert into public.rl (who, k, w, n) values (v, p_k, b, p_weight)
+  on conflict (who, k, w) do update set n = public.rl.n + p_weight, t = now()
+  returning n into c;
+  if c > p_max then
+    raise exception 'rate limit';
+  end if;
+end $$;
+
+create or replace function public._blocked(p_owner text, p_who text) returns boolean
+language sql stable security definer set search_path = public as
+$$ select exists (select 1 from public.blocks b where b.owner = p_owner and b.blocked = p_who) $$;
+
 /* ---------- droits de base : rien pour les visiteurs anonymes, le minimum pour les connectés ---------- */
 
 revoke all on all tables    in schema public from anon;
 revoke all on all sequences in schema public from anon;
 revoke all on all tables    in schema public from authenticated;
-grant select, insert, update on public.profiles    to authenticated;
+grant select, insert         on public.profiles    to authenticated;
+grant update (pub)           on public.profiles    to authenticated;
 grant select, insert         on public.chats       to authenticated;
 grant select, insert, delete on public.key_offers  to authenticated;
 grant select, insert, delete on public.messages    to authenticated;
 grant select, delete         on public.notices     to authenticated;
+grant select                 on public.blocks      to authenticated;
 grant usage on all sequences in schema public to authenticated;
 
 /* ---------- règles d'accès (RLS) ---------- */
@@ -127,18 +183,25 @@ alter table chats      enable row level security;
 alter table key_offers enable row level security;
 alter table messages   enable row level security;
 alter table notices    enable row level security;
-alter table profiles   force row level security;
-alter table chats      force row level security;
-alter table key_offers force row level security;
-alter table messages   force row level security;
-alter table notices    force row level security;
+alter table blocks     enable row level security;
+alter table rl         enable row level security;
+-- (pas de "force" : les fonctions internes du propriétaire doivent pouvoir agir sur toutes les lignes)
+alter table profiles   no force row level security;
+alter table chats      no force row level security;
+alter table key_offers no force row level security;
+alter table messages   no force row level security;
+alter table notices    no force row level security;
 
--- l'annuaire n'est plus lisible en entier : chacun ne voit que son profil (les autres via get_pubs)
+-- l'annuaire n'est pas lisible : chacun ne voit que son profil (les autres via get_pubs)
+-- le numéro doit être celui de l'email du compte, et ne peut plus changer ensuite
 drop policy if exists p_sel on profiles;
 drop policy if exists p_ins on profiles;
 drop policy if exists p_upd on profiles;
 create policy p_sel on profiles for select to authenticated using (uid = auth.uid());
-create policy p_ins on profiles for insert to authenticated with check (uid = auth.uid());
+create policy p_ins on profiles for insert to authenticated with check (
+  uid = auth.uid()
+  and coalesce(auth.jwt() ->> 'email', '') = id || '@zge.local'
+);
 create policy p_upd on profiles for update to authenticated using (uid = auth.uid()) with check (uid = auth.uid());
 
 drop policy if exists c_sel on chats;
@@ -175,49 +238,151 @@ drop policy if exists n_del on notices;
 create policy n_sel on notices for select to authenticated using (to_id = public.me());
 create policy n_del on notices for delete to authenticated using (to_id = public.me());
 
-/* ---------- limites anti-abus ---------- */
+drop policy if exists b_sel on blocks;
+create policy b_sel on blocks for select to authenticated using (owner = public.me());
+
+/* ---------- déclencheurs : limites, blocage, cohérence ---------- */
 
 create or replace function public._limit_messages() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
+  -- le destinataire a bloqué l'expéditeur : le message est jeté sans erreur
+  if public._blocked(new.to_id, new.from_id) then
+    return null;
+  end if;
   if (select count(*) from public.messages where from_id = new.from_id and created_at > now() - interval '1 minute') >= 3000 then
     raise exception 'rate limit';
   end if;
+  -- une seule personne ne peut pas remplir à elle seule la boîte d'un autre
+  if (select count(*) from public.messages where to_id = new.to_id and from_id = new.from_id) >= 1500 then
+    raise exception 'denied';
+  end if;
   if (select count(*) from public.messages where to_id = new.to_id) >= 4000 then
-    raise exception 'recipient inbox full';
+    raise exception 'denied';
+  end if;
+  return new;
+end $$;
+
+create or replace function public._limit_offers() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if public._blocked(new.to_id, new.from_id) then
+    return null;
+  end if;
+  if (select count(*) from public.key_offers where from_id = new.from_id and created_at > now() - interval '1 hour') >= 200 then
+    raise exception 'rate limit';
   end if;
   return new;
 end $$;
 
 create or replace function public._limit_chats() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare
+  v text := public.me();
+  o text;
 begin
-  if (select count(*) from public.chats where members[1] = new.members[1] and created_at > now() - interval '1 hour') >= 30 then
+  if v is null or not (v = any(new.members)) then
+    raise exception 'denied';
+  end if;
+  -- l'auteur est toujours le compte connecté, jamais une valeur choisie par le client
+  new.creator := v;
+  if (select count(distinct x) from unnest(new.members) x) <> array_length(new.members, 1) then
+    raise exception 'denied';
+  end if;
+  if (select count(*) from public.profiles p where p.id = any(new.members)) <> array_length(new.members, 1) then
+    raise exception 'denied';
+  end if;
+  foreach o in array new.members loop
+    if o <> v and public._blocked(o, v) then
+      raise exception 'denied';
+    end if;
+  end loop;
+  if (select count(*) from public.chats where creator = v and created_at > now() - interval '1 hour') >= 30 then
     raise exception 'rate limit';
   end if;
-  if (select count(*) from public.chats where new.members[1] = any(members)) >= 500 then
-    raise exception 'too many chats';
+  if (select count(*) from public.chats where v = any(members)) >= 500 then
+    raise exception 'denied';
+  end if;
+  return new;
+end $$;
+
+create or replace function public._limit_notices() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if (select count(*) from public.notices where to_id = new.to_id) >= 3000 then
+    return null;
+  end if;
+  return new;
+end $$;
+
+-- le numéro et le lien avec le compte ne changent jamais ; la clé publique change rarement
+create or replace function public._guard_profiles() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.id is distinct from old.id or new.uid is distinct from old.uid then
+    raise exception 'denied';
+  end if;
+  if new.pub is distinct from old.pub then
+    perform public._rl('pubup', 10, 3600);
   end if;
   return new;
 end $$;
 
 drop trigger if exists limit_messages on messages;
-create trigger limit_messages before insert on messages for each row execute function public._limit_messages();
+create trigger limit_messages before insert on messages    for each row execute function public._limit_messages();
+drop trigger if exists limit_offers on key_offers;
+create trigger limit_offers   before insert on key_offers  for each row execute function public._limit_offers();
 drop trigger if exists limit_chats on chats;
-create trigger limit_chats before insert on chats for each row execute function public._limit_chats();
+create trigger limit_chats    before insert on chats       for each row execute function public._limit_chats();
+drop trigger if exists limit_notices on notices;
+create trigger limit_notices  before insert on notices     for each row execute function public._limit_notices();
+drop trigger if exists guard_profiles on profiles;
+create trigger guard_profiles before update on profiles    for each row execute function public._guard_profiles();
 
 /* ---------- annuaire : on ne donne la clé publique que pour des numéros demandés explicitement ---------- */
 
 create or replace function public.get_pubs(p_ids text[]) returns table (id text, pub jsonb)
-language plpgsql stable security definer set search_path = public as $$
+language plpgsql security definer set search_path = public as $$
+declare
+  k int := coalesce(array_length(p_ids, 1), 0);
+begin
+  if public.me() is null or k not between 1 and 20 then
+    return;
+  end if;
+  -- recherche de numéros limitée : empêche de balayer tous les numéros possibles
+  perform public._rl('pubs_m', 100, 60, k);
+  perform public._rl('pubs_h', 600, 3600, k);
+  perform public._rl('pubs_d', 3000, 86400, k);
+  return query select p.id, p.pub from public.profiles p where p.id = any(p_ids);
+end $$;
+
+/* ---------- bloquer / débloquer ---------- */
+
+create or replace function public.block_user(p_id text) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  v text := public.me();
+begin
+  if v is null or p_id is null or p_id !~ '^[0-9]{9}$' or p_id = v then
+    return;
+  end if;
+  perform public._rl('block', 30, 3600);
+  if (select count(*) from public.blocks where owner = v) >= 500 then
+    return;
+  end if;
+  insert into public.blocks (owner, blocked) values (v, p_id) on conflict do nothing;
+  delete from public.messages   where to_id = v and from_id = p_id;
+  delete from public.key_offers where to_id = v and from_id = p_id;
+end $$;
+
+create or replace function public.unblock_all() returns void
+language plpgsql security definer set search_path = public as $$
 begin
   if public.me() is null then
     return;
   end if;
-  if coalesce(array_length(p_ids, 1), 0) not between 1 and 20 then
-    return;
-  end if;
-  return query select p.id, p.pub from public.profiles p where p.id = any(p_ids);
+  perform public._rl('unblock', 10, 3600);
+  delete from public.blocks where owner = public.me();
 end $$;
 
 /* ---------- quitter / supprimer / vider / supprimer le compte ---------- */
@@ -253,6 +418,10 @@ end $$;
 create or replace function public.leave_chat(p_chat text) returns void
 language plpgsql security definer set search_path = public as $$
 begin
+  if public.me() is null then
+    return;
+  end if;
+  perform public._rl('leave', 60, 60);
   perform public._leave(p_chat, public.me());
 end $$;
 
@@ -263,14 +432,40 @@ declare
   o   text;
   v   text := public.me();
 begin
+  if v is null then
+    return;
+  end if;
+  perform public._rl('clear', 30, 60);
   select c.members into mem from public.chats c where c.id = p_chat;
-  if mem is null or v is null or not (v = any(mem)) then
+  if mem is null or not (v = any(mem)) then
     return;
   end if;
   delete from public.messages where chat_id = p_chat;
   foreach o in array mem loop
     if o <> v then
       insert into public.notices (to_id, chat_id, kind) values (o, p_chat, 'clear');
+    end if;
+  end loop;
+end $$;
+
+create or replace function public.delete_msg(p_chat text, p_mid text) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  mem text[];
+  o   text;
+  v   text := public.me();
+begin
+  if v is null or p_mid is null or p_mid !~ '^[0-9a-f]{16}$' then
+    return;
+  end if;
+  perform public._rl('delmsg', 200, 60);
+  select c.members into mem from public.chats c where c.id = p_chat;
+  if mem is null or not (v = any(mem)) then
+    return;
+  end if;
+  foreach o in array mem loop
+    if o <> v then
+      insert into public.notices (to_id, chat_id, kind, who, mid) values (o, p_chat, 'msg', v, p_mid);
     end if;
   end loop;
 end $$;
@@ -284,36 +479,16 @@ begin
   if v is null then
     return;
   end if;
+  perform public._rl('delacc', 3, 3600);
   for c in select ch.id from public.chats ch where v = any(ch.members) loop
     perform public._leave(c, v);
   end loop;
   delete from public.messages   where from_id = v or to_id = v;
   delete from public.key_offers where from_id = v or to_id = v;
   delete from public.notices    where to_id = v;
+  delete from public.blocks     where owner = v or blocked = v;
+  delete from public.rl         where who = v;
   delete from auth.users where id = auth.uid();
-end $$;
-
-/* ---------- supprimer un message pour tout le monde (demande transmise aux autres à leur connexion) ---------- */
-
-create or replace function public.delete_msg(p_chat text, p_mid text) returns void
-language plpgsql security definer set search_path = public as $$
-declare
-  mem text[];
-  o   text;
-  v   text := public.me();
-begin
-  if v is null or p_mid is null or p_mid !~ '^[0-9a-f]{16}$' then
-    return;
-  end if;
-  select c.members into mem from public.chats c where c.id = p_chat;
-  if mem is null or not (v = any(mem)) then
-    return;
-  end if;
-  foreach o in array mem loop
-    if o <> v then
-      insert into public.notices (to_id, chat_id, kind, who, mid) values (o, p_chat, 'msg', v, p_mid);
-    end if;
-  end loop;
 end $$;
 
 /* ---------- rien ne reste : tout ce qui n'a pas été récupéré expire après 30 jours ---------- */
@@ -324,30 +499,58 @@ begin
   if public.me() is null then
     return;
   end if;
+  perform public._rl('purge', 6, 3600);
   delete from public.messages   where created_at < now() - interval '30 days';
   delete from public.key_offers where created_at < now() - interval '30 days';
   delete from public.notices    where created_at < now() - interval '30 days';
+  delete from public.rl         where t < now() - interval '2 days';
 end $$;
 
 /* ---------- droits sur les fonctions ---------- */
 
-revoke all on function public.me()                          from public, anon;
-revoke all on function public._leave(text, text)            from public, anon, authenticated;
-revoke all on function public._limit_messages()             from public, anon, authenticated;
-revoke all on function public._limit_chats()                from public, anon, authenticated;
-revoke all on function public.get_pubs(text[])              from public, anon;
-revoke all on function public.leave_chat(text)              from public, anon;
-revoke all on function public.clear_chat(text)              from public, anon;
-revoke all on function public.delete_msg(text, text)        from public, anon;
-revoke all on function public.delete_account()              from public, anon;
-revoke all on function public.purge_old()                   from public, anon;
-grant execute on function public.me()                       to authenticated;
-grant execute on function public.get_pubs(text[])           to authenticated;
-grant execute on function public.leave_chat(text)           to authenticated;
-grant execute on function public.clear_chat(text)           to authenticated;
-grant execute on function public.delete_msg(text, text)     to authenticated;
-grant execute on function public.delete_account()           to authenticated;
-grant execute on function public.purge_old()                to authenticated;
+do $$
+begin
+  alter default privileges in schema public revoke execute on functions from public, anon;
+exception when others then
+  raise notice 'droits par défaut non modifiés : %', sqlerrm;
+end $$;
+
+revoke all on function public.me()                           from public, anon;
+revoke all on function public._rl(text, int, int, int)       from public, anon, authenticated;
+revoke all on function public._blocked(text, text)           from public, anon, authenticated;
+revoke all on function public._leave(text, text)             from public, anon, authenticated;
+revoke all on function public._limit_messages()              from public, anon, authenticated;
+revoke all on function public._limit_offers()                from public, anon, authenticated;
+revoke all on function public._limit_chats()                 from public, anon, authenticated;
+revoke all on function public._limit_notices()               from public, anon, authenticated;
+revoke all on function public._guard_profiles()              from public, anon, authenticated;
+revoke all on function public.get_pubs(text[])               from public, anon;
+revoke all on function public.block_user(text)               from public, anon;
+revoke all on function public.unblock_all()                  from public, anon;
+revoke all on function public.leave_chat(text)               from public, anon;
+revoke all on function public.clear_chat(text)               from public, anon;
+revoke all on function public.delete_msg(text, text)         from public, anon;
+revoke all on function public.delete_account()               from public, anon;
+revoke all on function public.purge_old()                    from public, anon;
+grant execute on function public.me()                        to authenticated;
+grant execute on function public.get_pubs(text[])            to authenticated;
+grant execute on function public.block_user(text)            to authenticated;
+grant execute on function public.unblock_all()               to authenticated;
+grant execute on function public.leave_chat(text)            to authenticated;
+grant execute on function public.clear_chat(text)            to authenticated;
+grant execute on function public.delete_msg(text, text)      to authenticated;
+grant execute on function public.delete_account()            to authenticated;
+grant execute on function public.purge_old()                 to authenticated;
+
+/* ---------- délais maximum des requêtes (une requête trop lourde est coupée) ---------- */
+
+do $$
+begin
+  alter role authenticated set statement_timeout = '5s';
+  alter role anon          set statement_timeout = '2s';
+exception when others then
+  raise notice 'délais non modifiés : %', sqlerrm;
+end $$;
 
 /* ---------- temps réel (ajoute chaque table seulement si elle n'y est pas déjà) ---------- */
 
