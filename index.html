@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-5hVJlwHxyInAnuqE2/xizkmtilT6nlwUASR4TCDfXWo='; style-src 'sha256-cJw9ORJ62NgvZSBppIDpKsTAUP3iDFy+2+hw9fQhGO0='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-8YV6pW8ZsC2RZhbjebWaspzTHU3ELRVOyp4ITacMbCI='; style-src 'sha256-iGRYJHD7v6lJU7HIN6GdtV2VBIT68UwI2eOJ9dmqw88='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google" content="notranslate">
@@ -58,6 +58,10 @@ aside header button,#conv header button{padding:4px 10px}
 .doc p,.doc li{margin:6px 0}
 .doc ul{padding-left:20px}
 #srcv{white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.4;border:1px solid #999;padding:8px;margin:8px 0}
+#conv header>span:last-child{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+#qrv{position:fixed;inset:0;z-index:20;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
+.qh{font-size:18px;letter-spacing:1px}
+#qrc{max-width:90vw;max-height:60vh;width:auto;height:auto;border:1px solid #000}
 #cm{position:fixed;z-index:9;background:#fff;border:1px solid #000;display:flex;flex-direction:column;min-width:170px}
 #cm button{border:0;border-bottom:1px solid #ddd;text-align:left}
 #cm button:last-child{border-bottom:0}
@@ -115,7 +119,7 @@ aside header button,#conv header button{padding:4px 10px}
 <main id="legal" class="doc" lang="zh-Hans" hidden>
 <button type="button" id="lg-back" class="lk">← 返回 / Back</button>
 <h1>Zge 隐私、透明度和使用条款（大白话版）</h1>
-<p class="sub">最后更新：2026年11月17日。这页是用大白话写的，没绕弯子，没藏着掖着。看不懂的地方，宁可多看两遍，也别瞎猜。</p>
+<p class="sub">最后更新：2026年11月18日。这页是用大白话写的，没绕弯子，没藏着掖着。看不懂的地方，宁可多看两遍，也别瞎猜。</p>
 
 <h2>一、先说重点（懒得看全文的，看这一段就行）</h2>
 <ul>
@@ -163,6 +167,8 @@ aside header button,#conv header button{padding:4px 10px}
 <li>钥匙中转表：加密过的聊天钥匙。对方一取走就删，没取走最多留30天。</li>
 <li>消息表：加密后的消息或文件分块、发送者号码、接收者号码、发送时间。对方一取走就删，没取走最多留30天。</li>
 <li>通知表：“清空聊天”“删除聊天”“删除某条消息”这类清理指令，让对方的设备上线后照着删。对方处理完就删。</li>
+<li>拉黑名单：你拉黑了哪些号码。这张表是明文的，服务器知道谁拉黑了谁。你可以随时“Unblock all”全部清掉，删账号时也会一起删。</li>
+<li>限流计数表：谁、做了哪类操作、在一个时间段里做了几次。只是个计数器，用来防刷，过两天就会被清理。</li>
 <li>Supabase 登录系统：那个假邮箱（号码@zge.local）、密码哈希，还有 Supabase 自己记的登录时间、IP 这类系统日志。这部分归 Supabase 管，我们没法左右他们记多久。</li>
 <li>“30天”的清理不是定时任务，而是有人登录时顺手触发的。所以说是“最多大概30天”，不是精确到秒。</li>
 </ul>
@@ -181,6 +187,7 @@ aside header button,#conv header button{padding:4px 10px}
 <li>东西大概有多大。文字消息会补到512字节的整数倍，所以看不出你发了几个字，但看得出是长是短；文件被切成256KB一块，每块一样大，所以能大概猜出文件有多大。</li>
 <li>一个号码存不存在。你输入一个号码，系统会告诉你“找得到”还是“找不到”，所以号码本身不是秘密，别人知道你的号码就能给你开聊天。</li>
 <li>Supabase 和放网页的托管方，都能看到你的 IP 地址和访问时间，这是上网的基本规则，我们管不着。</li>
+<li>你拉黑了谁。对方发给你的消息会被服务器悄悄丢掉，对方那边不会收到“被拉黑”的提示。</li>
 <li>管数据库的人（也就是运营者）能在后台看到上面这些表，也能删账号，但没法解开消息内容。</li>
 </ul>
 
@@ -220,6 +227,9 @@ aside header button,#conv header button{padding:4px 10px}
 <li>GIF、视频和其他文件是原样发的，里面可能带着拍摄地点、设备型号、时间之类的元数据。发之前自己想清楚。</li>
 <li>只有图片和视频会直接在页面里显示。其他文件只给你一个下载按钮，下载下来打开之前先想想，别随便点来路不明的东西，打开以后出了事，是你自己的事。</li>
 <li>多个聊天可以跟同样的号码同时存在，想开几个开几个。</li>
+<li>聊天顶上有个“QR”按钮，会把这个聊天的加密钥匙变成一个二维码，中间是 Zge 的标志。二维码是在你自己的设备上现场画出来的，不经过服务器，也不会上传到任何地方。二维码上面写着“Keep your privacy”（保护好你的隐私），下面写着“DO NOT SHARE THIS”（千万别分享）。点之前会先让你确认；30秒后、或者你切到别的标签页，它会自动关掉。</li>
+<li>说清楚：这个二维码就是这个聊天的钥匙本身，谁扫到谁就能读这个聊天里的所有内容。别截图、别发给别人、别在有人拍你屏幕的地方打开。</li>
+<li>聊天顶上的“⊘”可以拉黑对方（只有一对一聊天有）：拉黑后这个聊天会被删掉，对方以后发给你的东西会被悄悄丢掉。菜单里的“Unblock all”可以一次解除所有拉黑。</li>
 <li>联系人备注名只存在你自己的设备上，服务器和对方都看不到。你可以给号码起名字，也可以给整个聊天起个只有你看得到的标题。</li>
 </ul>
 
@@ -229,7 +239,13 @@ aside header button,#conv header button{padding:4px 10px}
 <li>所有显示出来的文字都当纯文本处理，别人发来一段代码，也只会显示成一段字，不会被执行。</li>
 <li>数据库每张表都开了行级权限：你只能读发给你的东西，只能以你自己的号码发东西，而且只能发给同一个聊天里的人。</li>
 <li>通讯录不公开：不能列出所有号码，只能按你输入的号码逐个查（一次最多20个）。</li>
-<li>限流：每分钟发送量有上限，每个人收件箱有上限，一小时内开聊天的数量有上限，防止有人刷屏刷爆。</li>
+<li>限流（防刷、防塞爆）：每分钟发送量有上限；同一个人最多只能往你的收件箱里塞一定数量的东西，不会一个人把你塞满；一小时内开新聊天的数量有上限，而且是按“当前登录的这个账号”来算，不是按客户端自己填的名单来算；查号码有每分钟、每小时、每天的上限，防止有人把所有号码扫一遍；删除、清空、退群、拉黑、换钥匙这些操作也都有次数限制。</li>
+<li>每个聊天只能拉真实存在的、不重复的号码，被对方拉黑的号码拉不进来。</li>
+<li>你的号码必须和账号绑定，注册之后不能改，也不能抢别人的号码。</li>
+<li>网页里把浏览器自带的右键菜单关掉了：在页面上右键，不会再弹出浏览器那个带“检查”的菜单；在消息上右键（手机上长按），弹出来的是 Zge 自己的消息菜单。F12、Ctrl+Shift+I、Ctrl+Shift+J、Ctrl+Shift+C（苹果电脑上是 Cmd+Option+I/J/C）这些打开开发者工具的快捷键也被拦了。</li>
+<li>数据库对每个请求设了最长执行时间，太重的请求会被直接掐掉。</li>
+<li>网页自己也会“让着点”服务器：连不上的时候越等越久再重试，页面在后台时降低刷新频率，发消息和开聊天都有最小间隔，本地每个聊天最多存最近2000条。</li>
+<li>收到发给你、但你没有对应钥匙的消息，一小时后会被直接丢掉，不会一直堆着。</li>
 <li>收到的数据一律先检查格式再用，长度、编号、编码对不上的直接丢掉。</li>
 <li>收到的聊天钥匙，必须是从聊天成员发来的，而且必须是正好32字节才收。</li>
 <li>本地保险箱、会话只放内存、五分钟自动锁、登录失败递增等待、对方钥匙变更提醒、安全号码，上面都讲过了。</li>
@@ -238,11 +254,13 @@ aside header button,#conv header button{padding:4px 10px}
 <h2>十三、局限（说实话，这些我们解决不了）</h2>
 <ul>
 <li>没有第三方审计。代码开源，不代表有人认真看过。你有能力的话，请自己看或者找人看。</li>
+<li>说句大实话：上面拦右键和开发者工具快捷键，只是挡一挡手滑的人，不算真正的保护。网页代码是跑在你自己的电脑上的，从浏览器的菜单里照样能打开开发者工具，懂行的人随便就能绕过去。Zge 的安全靠的是加密和前面讲的那些规则，不靠藏代码，反正代码本来就是公开的。</li>
 <li>网页每次都是从服务器上现取的。理论上，管网页的人（运营者）或者黑进服务器的人，可以换一份有毒的网页，偷走你的钥匙。这是所有网页版加密聊天都躲不开的问题。想更放心，就自己下载源码、自己部署，并且核对代码有没有被改。</li>
 <li>你的设备要是中了木马、装了恶意浏览器插件、被人看着屏幕、有人盯着你敲键盘，加密再好也没用。</li>
 <li>没有“前向保密”：聊天钥匙是固定的，一旦某个聊天的钥匙泄露，这个聊天里所有的历史记录都会暴露。</li>
 <li>元数据（谁和谁、什么时候、多大）藏不住，上面已经说清楚了。</li>
-<li>没有拉黑功能。别人知道你的号码就能给你开聊天，你只能删掉那个聊天（删了对方那边也会删）。</li>
+<li>别人知道你的号码，还是可以给你开聊天，你只能删掉或者拉黑。拉黑只拦得住这个号码，对方再注册个新号又能来，这个我们做不到。</li>
+<li>说到防 DDoS（大流量攻击）：上面这些限流只能挡住“滥用账号”的人。真正的大流量攻击是冲着网络本身来的，靠网页代码和数据库规则挡不住，得靠前面的 CDN、防火墙和 Supabase 自带的防护。所以别指望 Zge 自己能扛住大规模攻击，服务有可能被打趴。</li>
 <li>服务有可能宕机、有可能丢数据、有可能哪天不干了，别拿它当唯一的存档。</li>
 </ul>
 
@@ -278,6 +296,7 @@ aside header button,#conv header button{padding:4px 10px}
   <header><span id="me"></span><button id="mb">⋯</button></header>
   <div id="menu" hidden>
    <button id="m-cts">Contacts</button>
+   <button id="m-unb">Unblock all</button>
    <button id="m-cache">Clear cache</button>
    <button id="m-dev">Erase device</button>
    <button id="m-acc">Delete account</button>
@@ -298,7 +317,7 @@ aside header button,#conv header button{padding:4px 10px}
  <section id="conv">
   <header>
    <button id="back">←</button><span id="who"></span>
-   <span><button id="sn">#</button> <button id="ed">✎</button> <button id="clr">Clear</button> <button id="rm">Delete</button></span>
+   <span><button id="qr">QR</button> <button id="sn">#</button> <button id="bk">⊘</button> <button id="ed">✎</button> <button id="clr">Clear</button> <button id="rm">Delete</button></span>
   </header>
   <div id="msgs"></div>
   <form id="sf">
@@ -311,6 +330,7 @@ aside header button,#conv header button{padding:4px 10px}
 </main>
 
 <div id="cm" hidden></div>
+<div id="qrv" hidden><b class="qh">! Keep your privacy !</b><canvas id="qrc" width="344" height="344"></canvas><b class="qh">! DO NOT SHARE THIS !</b><button id="qrx">OK</button></div>
 
 <script src="supabase.js"></script>
 <script>
@@ -403,7 +423,7 @@ const unseal=(key,o,aad)=>crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv),a
 /* ---------- state ---------- */
 let me=null,ident=null,store=null,M={},DK=null,chats=[],cur=null;
 let busy=false,again=false,entered=false,sending=false,sig='',stick=true;
-let nt,idleT,lastAct=Date.now(),fails=0,lockUntil=0;
+let nt,idleT,lastAct=Date.now(),fails=0,lockUntil=0,failN=0,lastSync=0,lastSend=0,lastStart=0,kickT,pollT,qrT;
 const unread=new Set(),keyCache=new Map(),urls=new Map(),declined=new Set();
 let wq=Promise.resolve();
 const queue=f=>{wq=wq.then(f).catch(()=>{})};
@@ -472,7 +492,7 @@ const saveDead=()=>queue(()=>lsSet('x',store.dead));
 const saveMsgs=id=>queue(()=>M[id]?lsSet('m:'+id,M[id]):0);
 const setKey=(id,raw)=>{store.keys[id]=raw;saveKeys()};
 const msgs=id=>M[id]||[];
-const setMsgs=(id,l)=>{M[id]=l;saveMsgs(id)};
+const setMsgs=(id,l)=>{M[id]=l.length>2000?l.slice(-2000):l;saveMsgs(id)};
 const others=c=>c.members.filter(x=>x!==me);
 const nm=n=>store&&store.cts.c[n]||'+'+n;
 const label=c=>store.cts.t[c.id]||others(c).map(nm).join(', ');
@@ -628,14 +648,23 @@ async function enter(){
  sb.rpc('purge_old').then(()=>{},()=>{});
  await sync();
  sb.channel('z')
-  .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'to_id=eq.'+me},sync)
-  .on('postgres_changes',{event:'INSERT',schema:'public',table:'key_offers',filter:'to_id=eq.'+me},sync)
-  .on('postgres_changes',{event:'INSERT',schema:'public',table:'notices',filter:'to_id=eq.'+me},sync)
-  .on('postgres_changes',{event:'*',schema:'public',table:'chats'},sync)
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'to_id=eq.'+me},kick)
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'key_offers',filter:'to_id=eq.'+me},kick)
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'notices',filter:'to_id=eq.'+me},kick)
+  .on('postgres_changes',{event:'*',schema:'public',table:'chats'},kick)
   .subscribe();
- setInterval(sync,8000);
+ poll();
+}
+function kick(){
+ clearTimeout(kickT);
+ kickT=setTimeout(sync,Math.max(300,1500-(Date.now()-lastSync)));
+}
+function poll(){
+ clearTimeout(pollT);
+ pollT=setTimeout(async()=>{await sync();poll()},(document.hidden?60000:8000)*2**failN+Math.random()*2000);
 }
 async function leaveDevice(){
+ hideQR();
  try{await sb.auth.signOut({scope:'local'})}catch{}
  location.reload();
 }
@@ -692,9 +721,10 @@ async function receiveFile(m,p){
 async function sync(){
  if(!me)return;
  if(busy){again=true;return}
- busy=true;
+ busy=true;lastSync=Date.now();let ok=false;
  try{
-  const{data:cs}=await sb.from('chats').select('id,members');
+  const{data:cs,error:e1}=await sb.from('chats').select('id,members');
+  if(e1)throw e1;
   if(cs)chats=cs.filter(c=>HEX64.test(c.id)&&Array.isArray(c.members)&&c.members.includes(me)&&c.members.every(x=>NUM9.test(x))).map(c=>({id:c.id,members:c.members}));
 
   // cleanup orders (clear / delete / leave)
@@ -732,7 +762,7 @@ async function sync(){
     last=m.id;
     if(!HEX64.test(m.chat_id)||!NUM9.test(m.from_id)){done.push(m.id);continue}
     const k=await chatKey(m.chat_id);
-    if(!k)continue;
+    if(!k){if(Date.now()-Date.parse(m.created_at)>3600000)done.push(m.id);continue}
     try{
      if(m.fid){
       if(!HEX16.test(m.fid)||!Number.isInteger(m.idx)||m.idx<0||m.idx>=100){done.push(m.id);continue}
@@ -771,7 +801,9 @@ async function sync(){
    if(done.length)await sb.from('messages').delete().in('id',done);
    if(ms.length<40)break;
   }
+  ok=true;
  }catch{}
+ failN=ok?0:Math.min(failN+1,5);
  busy=false;
  renderList();
  refreshInput();
@@ -790,6 +822,8 @@ async function post(c,p){
 async function sendText(t){
  const c=chats.find(x=>x.id===cur);
  if(!c||!t)return;
+ if(Date.now()-lastSend<250)return note('Slow down');
+ lastSend=Date.now();
  const ts=Date.now(),i=hex(rnd(8));
  if(!await post(c,{k:'t',t,ts,i})){sync();return note('Error')}
  setMsgs(c.id,msgs(c.id).concat([{sid:'l'+hex(rnd(6)),i,f:me,k:'t',t,ts}]));
@@ -869,6 +903,8 @@ function startOrOpen(n){
 }
 async function start(ids){
  if(!ids||!ids.length||ids.length>20)return note('Error');
+ if(Date.now()-lastStart<2000)return note('Slow down');
+ lastStart=Date.now();
  const ps=await getPubs(ids);
  if(!ps||ps.length!==ids.length||!ps.every(p=>NUM9.test(p.id)&&validPub(p.pub)))return note('Not found');
  for(const p of ps)if(!await trust(p.id,p.pub))return note('Key not trusted');
@@ -895,12 +931,14 @@ function open(id){
  $('#app').classList.add('open');
  const c=chats.find(x=>x.id===id);
  $('#who').textContent=c?title(c):'';
+ $('#bk').hidden=!(c&&c.members.length===2);
  refreshInput();
  renderList();
  renderMsgs();
  $('#tx').focus();
 }
 function closeChat(){
+ hideQR();
  cur=null;sig='';
  $('#app').classList.remove('open');
  renderList();
@@ -1051,8 +1089,170 @@ $('#m-out').onclick=leaveDevice;
 ['pointerdown','keydown','touchstart','wheel'].forEach(e=>addEventListener(e,()=>{if(entered)bump()},{passive:true,capture:true}));
 document.addEventListener('visibilitychange',()=>{
  document.documentElement.classList.toggle('hid',document.hidden);
+ if(document.hidden)hideQR();
  if(!document.hidden&&entered&&Date.now()-lastAct>IDLE)lock();
 });
+
+/* ---------- QR code of the chat key: generated here, never sent anywhere ---------- */
+const LOGO='iVBORw0KGgoAAAANSUhEUgAAAIAAAACAAQAAAADrRVxmAAAB90lEQVR42tWVPY7UQBCFv+6xdhyM1j7B2keYC6zGVyHhDCuiDhDnICDgFMjSJgQEm0GGkQhGRI20gUGeLoLutts9K34SYB0+vffqp6vKSlh/mv8USL+DiIhKAOUyibS5ZptJQPIoXa6pRNaMMWeonCGwyTjdWfZnYc5y/Wn5wEbOElECsJToPQRABMDMphXYuckO2MMO6DXABPShjChRR8DAoEMbLqZQWWSUDmjBagALdfWppE4YbWm+UcKoAQboivd9V6Qv9+W4v/Npi4gBud3dbB1sAkPx5tmrSUUGKMftJbIwtOPqBmNw0XSi6uiDxMHW8uEpjaQvd3+XDl1Z8v1ImyRWcLL+HUVkgsrx5AWyeNTKVNerjtG9u3rOImnENvajpGF3n1+/jIwRDiLsDisGgx7W29B8tfl6mBzocmDva5i/U5EwuvDkf3mz+39wUIoHGMOM63S9xP5BFLsC9O9IxhWwbO0SdvqFh8HNFej5+Dwo6QPQhWGJQyd9uKUSJa1vCJJ42JVpHXJPL+4EcB+BEk5Rp9MhHWLYCWh8VA843/NxlfrJ8NaftvVhCwyTA10OtDlQ50A573cA4oSUEdC5JOZR55PchlpEhqUrHvCPraZZcpEPizLgb3CQeJPD4iEToGTxYNPDJRsJl9+ffFk69hj+6j8AK2vmqxEDM+YAAAAASUVORK5CYII=';
+const QR=(()=>{
+ const EXP=new Uint8Array(512),LOG=new Uint8Array(256);
+ for(let i=0,x=1;i<255;i++){EXP[i]=x;LOG[x]=i;x<<=1;if(x&256)x^=0x11d}
+ for(let i=255;i<512;i++)EXP[i]=EXP[i-255];
+ const mul=(a,b)=>a&&b?EXP[LOG[a]+LOG[b]]:0;
+ const gen=n=>{let g=[1];for(let i=0;i<n;i++){const h=new Array(g.length+1).fill(0);for(let j=0;j<g.length;j++){h[j]^=g[j];h[j+1]^=mul(g[j],EXP[i])}g=h}return g};
+ const rs=(d,n)=>{const g=gen(n),r=new Array(n).fill(0);for(const b of d){const f=b^r[0];r.shift();r.push(0);if(f)for(let i=0;i<n;i++)r[i]^=mul(g[i+1],f)}return r};
+ // error correction level H (30% of the code can be hidden: room for the logo)
+ const V={1:[17,[[1,9]]],2:[28,[[1,16]]],3:[22,[[2,13]]],4:[16,[[4,9]]],5:[22,[[2,11],[2,12]]],6:[28,[[4,15]]]};
+ const AL={2:[6,18],3:[6,22],4:[6,26],5:[6,30],6:[6,34]};
+ const MK=[(x,y)=>(x+y)%2===0,(x,y)=>y%2===0,(x,y)=>x%3===0,(x,y)=>(x+y)%3===0,
+  (x,y)=>(Math.floor(x/3)+Math.floor(y/2))%2===0,(x,y)=>x*y%2+x*y%3===0,(x,y)=>(x*y%2+x*y%3)%2===0,(x,y)=>((x+y)%2+x*y%3)%2===0];
+ function make(text){
+  const bytes=[...enc.encode(text)];
+  let ver=0;
+  for(let v=1;v<=6;v++){
+   const cap=V[v][1].reduce((a,[c,d])=>a+c*d,0);
+   if(Math.ceil((12+bytes.length*8)/8)<=cap){ver=v;break}
+  }
+  if(!ver)throw new Error('too long');
+  const ec=V[ver][0],blocks=V[ver][1],cap=blocks.reduce((a,[c,d])=>a+c*d,0);
+  const bits=[],put=(v,k)=>{for(let i=k-1;i>=0;i--)bits.push(v>>i&1)};
+  put(4,4);put(bytes.length,8);for(const b of bytes)put(b,8);
+  put(0,Math.min(4,cap*8-bits.length));
+  while(bits.length%8)bits.push(0);
+  const data=[];
+  for(let i=0;i<bits.length;i+=8){let b=0;for(let j=0;j<8;j++)b=b<<1|bits[i+j];data.push(b)}
+  for(let p=0xEC;data.length<cap;p^=0xEC^0x11)data.push(p);
+  const dbs=[],ebs=[];let off=0;
+  for(const[c,d]of blocks)for(let i=0;i<c;i++){const blk=data.slice(off,off+d);off+=d;dbs.push(blk);ebs.push(rs(blk,ec))}
+  const all=[],maxd=Math.max(...dbs.map(b=>b.length));
+  for(let i=0;i<maxd;i++)for(const b of dbs)if(i<b.length)all.push(b[i]);
+  for(let i=0;i<ec;i++)for(const b of ebs)all.push(b[i]);
+  const n=17+4*ver,M=Array.from({length:n},()=>new Array(n).fill(false)),F=Array.from({length:n},()=>new Array(n).fill(false));
+  const set=(x,y,v)=>{M[y][x]=v;F[y][x]=true};
+  const finder=(cx,cy)=>{
+   for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){
+    const x=cx+dx,y=cy+dy;
+    if(x<0||y<0||x>=n||y>=n)continue;
+    const d=Math.max(Math.abs(dx),Math.abs(dy));
+    set(x,y,d!==2&&d!==4);
+   }
+  };
+  finder(3,3);finder(n-4,3);finder(3,n-4);
+  for(let i=0;i<n;i++){if(!F[6][i])set(i,6,i%2===0);if(!F[i][6])set(6,i,i%2===0)}
+  if(AL[ver]){
+   const p=AL[ver],last=p.length-1;
+   for(let a=0;a<p.length;a++)for(let b=0;b<p.length;b++){
+    if((a===0&&b===0)||(a===0&&b===last)||(a===last&&b===0))continue;
+    for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)set(p[b]+dx,p[a]+dy,Math.max(Math.abs(dx),Math.abs(dy))!==1);
+   }
+  }
+  const fmt=m=>{const d=(2<<3)|m;let r=d;for(let i=0;i<10;i++)r=(r<<1)^((r>>>9)*0x537);return((d<<10)|r)^0x5412};
+  const drawFmt=m=>{
+   const b=fmt(m),g=i=>(b>>i&1)===1;
+   for(let i=0;i<=5;i++)set(8,i,g(i));
+   set(8,7,g(6));set(8,8,g(7));set(7,8,g(8));
+   for(let i=9;i<15;i++)set(14-i,8,g(i));
+   for(let i=0;i<8;i++)set(n-1-i,8,g(i));
+   for(let i=8;i<15;i++)set(8,n-15+i,g(i));
+   set(8,n-8,true);
+  };
+  drawFmt(0);
+  let bi=0;
+  for(let right=n-1;right>=1;right-=2){
+   if(right===6)right=5;
+   for(let vert=0;vert<n;vert++)for(let j=0;j<2;j++){
+    const x=right-j,y=((right+1)&2)===0?n-1-vert:vert;
+    if(!F[y][x]&&bi<all.length*8){M[y][x]=(all[bi>>3]>>(7-(bi&7))&1)===1;bi++}
+   }
+  }
+  const apply=m=>{for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(!F[y][x]&&MK[m](x,y))M[y][x]=!M[y][x]};
+  const pen=()=>{
+   let p=0;
+   for(let t=0;t<2;t++)for(let a=0;a<n;a++){
+    let run=1,line='';
+    for(let b=0;b<n;b++){
+     const v=t?M[b][a]:M[a][b];
+     line+=v?'1':'0';
+     if(b>0){if(v===(t?M[b-1][a]:M[a][b-1])){run++;if(run===5)p+=3;else if(run>5)p++}else run=1}
+    }
+    const f=line.match(/(?=10111010000|00001011101)/g);
+    if(f)p+=40*f.length;
+   }
+   for(let y=0;y<n-1;y++)for(let x=0;x<n-1;x++){const v=M[y][x];if(v===M[y][x+1]&&v===M[y+1][x]&&v===M[y+1][x+1])p+=3}
+   let dk=0;for(const r of M)for(const v of r)if(v)dk++;
+   return p+Math.floor(Math.abs(dk*20-n*n*10)/(n*n))*10;
+  };
+  let best=0,bp=1e9;
+  for(let m=0;m<8;m++){apply(m);const p=pen();apply(m);if(p<bp){bp=p;best=m}}
+  apply(best);drawFmt(best);
+  return M;
+ }
+ return{make};
+})();
+let logoP;
+const getLogo=()=>logoP||(logoP=new Promise((res,rej)=>{
+ const u=URL.createObjectURL(new Blob([unb64(LOGO)],{type:'image/png'})),i=new Image();
+ i.onload=()=>{URL.revokeObjectURL(u);res(i)};
+ i.onerror=rej;
+ i.src=u;
+}));
+async function drawQR(M,cv){
+ const n=M.length,q=4,sc=Math.max(2,Math.floor(344/(n+2*q))),W=(n+2*q)*sc;
+ cv.width=W;cv.height=W;
+ const g=cv.getContext('2d');
+ g.fillStyle='#fff';g.fillRect(0,0,W,W);
+ g.fillStyle='#000';
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(M[y][x])g.fillRect((x+q)*sc,(y+q)*sc,sc,sc);
+ // ZGE logo in the middle (about 7% of the surface: the error correction absorbs it)
+ const bm=(Math.round(n*0.27)|1),st=(n-bm)>>1;
+ g.fillStyle='#fff';
+ g.fillRect((st+q)*sc,(st+q)*sc,bm*sc,bm*sc);
+ g.drawImage(await getLogo(),(st+1+q)*sc,(st+1+q)*sc,(bm-2)*sc,(bm-2)*sc);
+}
+function hideQR(){
+ clearTimeout(qrT);
+ const v=$('#qrv');
+ if(v.hidden)return;
+ v.hidden=true;
+ const c=$('#qrc');
+ c.getContext('2d').clearRect(0,0,c.width,c.height);
+}
+async function showQR(){
+ const c=chats.find(x=>x.id===cur),raw=c&&keys()[c.id];
+ if(!raw)return;
+ if(!confirm('This code is the key of this chat. Anyone who scans it can read the whole chat. Show it?'))return;
+ try{
+  const text='zge1:'+raw.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  await drawQR(QR.make(text),$('#qrc'));
+  $('#qrv').hidden=false;
+  clearTimeout(qrT);
+  qrT=setTimeout(hideQR,30000);
+ }catch{note('Error')}
+}
+$('#qr').onclick=showQR;
+$('#qrx').onclick=hideQR;
+
+/* ---------- block ---------- */
+$('#bk').onclick=async()=>{
+ const c=chats.find(x=>x.id===cur);
+ if(!c||c.members.length!==2)return;
+ const o=others(c)[0];
+ if(!confirm('Block +'+o+' and delete this chat? They will not be able to write to you.'))return;
+ const r=await sb.rpc('block_user',{p_id:o});
+ if(r.error)return note('Error');
+ const d=await sb.rpc('leave_chat',{p_chat:c.id});
+ if(d.error)return note('Error');
+ await wipeChat(c.id,true);
+ chats=chats.filter(x=>x.id!==c.id);
+ closeChat();
+};
+$('#m-unb').onclick=async()=>{
+ $('#menu').hidden=true;
+ if(!confirm('Unblock all numbers?'))return;
+ const r=await sb.rpc('unblock_all');
+ note(r.error?'Error':'Done');
+};
 
 /* ---------- right-click menu: delete a message ---------- */
 let lp;
@@ -1079,6 +1279,13 @@ async function delMsg(m,all){
  await dropMsg(c.id,m);
  renderMsgs();
 }
+// the browser's own right-click menu (which has "Inspect") is disabled; on a message the site's own menu opens instead
+addEventListener('contextmenu',e=>e.preventDefault(),true);
+// shortcuts that open the developer tools: F12, Ctrl/Cmd+Shift+I/J/C, Cmd+Option+I/J/C
+addEventListener('keydown',e=>{
+ const dev=['KeyI','KeyJ','KeyC'].includes(e.code);
+ if(e.key==='F12'||((e.ctrlKey||e.metaKey)&&e.shiftKey&&dev)||(e.metaKey&&e.altKey&&dev)){e.preventDefault();e.stopPropagation()}
+},true);
 document.addEventListener('click',hideMenu);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')hideMenu()});
 document.addEventListener('scroll',hideMenu,true);
