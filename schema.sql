@@ -67,8 +67,10 @@ alter table messages    add column if not exists idx int;
 alter table messages    add column if not exists n   int;
 alter table chats       add column if not exists created_at timestamptz not null default now();
 alter table chats       add column if not exists creator text;
+alter table chats       add column if not exists accepted text[] not null default '{}';
 alter table key_offers  add column if not exists created_at timestamptz not null default now();
 alter table notices     add column if not exists mid text;
+alter table key_offers  add column if not exists e int not null default 1;
 
 /* ---------- contraintes (anciennes versions retirées, puis recréées) ---------- */
 
@@ -77,8 +79,13 @@ alter table profiles drop constraint if exists profiles_id_fmt;
 alter table profiles drop constraint if exists profiles_pub_fmt;
 alter table profiles add  constraint profiles_id_fmt  check (id ~ '^[0-9]{9}$');
 alter table profiles add  constraint profiles_pub_fmt check (
-  jsonb_typeof(pub) = 'object' and pub->>'kty' = 'EC' and pub->>'crv' = 'P-256'
-  and length(pub->>'x') <= 64 and length(pub->>'y') <= 64 and not (pub ? 'd')
+  coalesce(jsonb_typeof(pub) = 'object', false)
+  and coalesce(pub->>'kty' = 'EC', false)
+  and coalesce(pub->>'crv' = 'P-256', false)
+  and coalesce(jsonb_typeof(pub->'x') = 'string' and length(pub->>'x') between 1 and 64, false)
+  and coalesce(jsonb_typeof(pub->'y') = 'string' and length(pub->>'y') between 1 and 64, false)
+  and coalesce((pub - 'kty' - 'crv' - 'x' - 'y' - 'ext' - 'key_ops') = '{}'::jsonb, false)
+  and length(pub::text) < 500
 );
 
 alter table chats drop constraint if exists chats_id_check;
@@ -88,7 +95,7 @@ alter table chats drop constraint if exists chats_members_size;
 alter table chats drop constraint if exists chats_members_fmt;
 alter table chats drop constraint if exists chats_creator_fmt;
 alter table chats add  constraint chats_id_fmt       check (id ~ '^[0-9a-f]{64}$');
-alter table chats add  constraint chats_members_size check (array_length(members, 1) between 2 and 21);
+alter table chats add  constraint chats_members_size check (coalesce(array_length(members, 1) between 2 and 21, false));
 alter table chats add  constraint chats_members_fmt  check (array_to_string(members, ',') ~ '^[0-9]{9}(,[0-9]{9})*$');
 alter table chats add  constraint chats_creator_fmt  check (creator is null or creator ~ '^[0-9]{9}$');
 
@@ -97,6 +104,11 @@ alter table key_offers drop constraint if exists key_offers_data_len;
 alter table key_offers drop constraint if exists key_offers_fmt;
 alter table key_offers add  constraint key_offers_data_len check (length(data) < 1000 and length(iv) < 40);
 alter table key_offers add  constraint key_offers_fmt      check (to_id ~ '^[0-9]{9}$' and from_id ~ '^[0-9]{9}$');
+alter table key_offers drop constraint if exists key_offers_e;
+alter table key_offers add  constraint key_offers_e        check (e between 1 and 1000000);
+-- une nouvelle clé de groupe (numéro de version plus grand) peut coexister avec l'ancienne offre
+alter table key_offers drop constraint if exists key_offers_pkey;
+alter table key_offers add  primary key (chat_id, to_id, from_id, e);
 
 alter table messages drop constraint if exists messages_data_check;
 alter table messages drop constraint if exists messages_check;
@@ -245,20 +257,40 @@ create policy b_sel on blocks for select to authenticated using (owner = public.
 
 create or replace function public._limit_messages() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare
+  acc text[];
+  c   int;
 begin
   -- le destinataire a bloqué l'expéditeur : le message est jeté sans erreur
   if public._blocked(new.to_id, new.from_id) then
     return null;
   end if;
-  if (select count(*) from public.messages where from_id = new.from_id and created_at > now() - interval '1 minute') >= 3000 then
+  -- les écritures vers un même destinataire passent une par une : les comptes ci-dessous restent exacts
+  perform pg_advisory_xact_lock(hashtextextended('inbox:' || new.to_id, 0));
+  if (select count(*) from public.messages where from_id = new.from_id and created_at > now() - interval '1 minute') >= 1500 then
     raise exception 'rate limit';
   end if;
   -- une seule personne ne peut pas remplir à elle seule la boîte d'un autre
-  if (select count(*) from public.messages where to_id = new.to_id and from_id = new.from_id) >= 1500 then
+  if (select count(*) from public.messages where to_id = new.to_id and from_id = new.from_id) >= 400 then
     raise exception 'denied';
   end if;
   if (select count(*) from public.messages where to_id = new.to_id) >= 4000 then
     raise exception 'denied';
+  end if;
+  select ch.accepted into acc from public.chats ch where ch.id = new.chat_id;
+  acc := coalesce(acc, '{}');
+  if not (new.to_id = any(acc)) then
+    -- le destinataire n'a pas encore accepté cette conversation : 5 messages au total, ensuite il faut sa réponse
+    insert into public.rl (who, k, w, n) values (new.from_id, 'req:' || new.chat_id || ':' || new.to_id, 0, 1)
+    on conflict (who, k, w) do update set n = public.rl.n + 1, t = now()
+    returning n into c;
+    if c > 5 then
+      raise exception 'denied';
+    end if;
+  end if;
+  -- répondre dans une conversation vaut acceptation
+  if not (new.from_id = any(acc)) then
+    update public.chats set accepted = array_append(accepted, new.from_id) where id = new.chat_id;
   end if;
   return new;
 end $$;
@@ -269,6 +301,7 @@ begin
   if public._blocked(new.to_id, new.from_id) then
     return null;
   end if;
+  perform pg_advisory_xact_lock(hashtextextended('offer:' || new.from_id, 0));
   if (select count(*) from public.key_offers where from_id = new.from_id and created_at > now() - interval '1 hour') >= 200 then
     raise exception 'rate limit';
   end if;
@@ -284,8 +317,10 @@ begin
   if v is null or not (v = any(new.members)) then
     raise exception 'denied';
   end if;
-  -- l'auteur est toujours le compte connecté, jamais une valeur choisie par le client
-  new.creator := v;
+  perform pg_advisory_xact_lock(hashtextextended('chats:' || v, 0));
+  -- l'auteur est toujours le compte connecté, jamais une valeur choisie par le client ; il a accepté d'office
+  new.creator  := v;
+  new.accepted := array[v];
   if (select count(distinct x) from unnest(new.members) x) <> array_length(new.members, 1) then
     raise exception 'denied';
   end if;
@@ -293,8 +328,14 @@ begin
     raise exception 'denied';
   end if;
   foreach o in array new.members loop
-    if o <> v and public._blocked(o, v) then
-      raise exception 'denied';
+    if o <> v then
+      if public._blocked(o, v) then
+        raise exception 'denied';
+      end if;
+      -- une personne ne peut pas recevoir une avalanche de demandes de conversation en attente
+      if (select count(*) from public.chats where o = any(members) and not (o = any(accepted))) >= 200 then
+        raise exception 'denied';
+      end if;
     end if;
   end loop;
   if (select count(*) from public.chats where creator = v and created_at > now() - interval '1 hour') >= 30 then
@@ -356,6 +397,21 @@ begin
   return query select p.id, p.pub from public.profiles p where p.id = any(p_ids);
 end $$;
 
+/* ---------- accepter une demande de conversation ---------- */
+
+create or replace function public.accept_chat(p_chat text) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  v text := public.me();
+begin
+  if v is null then
+    return;
+  end if;
+  perform public._rl('accept', 60, 60);
+  update public.chats set accepted = array_append(accepted, v)
+  where id = p_chat and v = any(members) and not (v = any(accepted));
+end $$;
+
 /* ---------- bloquer / débloquer ---------- */
 
 create or replace function public.block_user(p_id text) returns void
@@ -406,9 +462,10 @@ begin
     foreach o in array mem loop
       insert into public.notices (to_id, chat_id, kind) values (o, p_chat, 'del');
     end loop;
+    delete from public.rl where k like 'req:' || p_chat || ':%';
     delete from public.chats where id = p_chat;
   else
-    update public.chats set members = mem where id = p_chat;
+    update public.chats set members = mem, accepted = array_remove(accepted, p_me) where id = p_chat;
     foreach o in array mem loop
       insert into public.notices (to_id, chat_id, kind, who) values (o, p_chat, 'purge', p_me);
     end loop;
@@ -503,7 +560,7 @@ begin
   delete from public.messages   where created_at < now() - interval '30 days';
   delete from public.key_offers where created_at < now() - interval '30 days';
   delete from public.notices    where created_at < now() - interval '30 days';
-  delete from public.rl         where t < now() - interval '2 days';
+  delete from public.rl         where t < now() - interval '2 days' and k not like 'req:%';
 end $$;
 
 /* ---------- droits sur les fonctions ---------- */
@@ -525,6 +582,7 @@ revoke all on function public._limit_chats()                 from public, anon, 
 revoke all on function public._limit_notices()               from public, anon, authenticated;
 revoke all on function public._guard_profiles()              from public, anon, authenticated;
 revoke all on function public.get_pubs(text[])               from public, anon;
+revoke all on function public.accept_chat(text)              from public, anon;
 revoke all on function public.block_user(text)               from public, anon;
 revoke all on function public.unblock_all()                  from public, anon;
 revoke all on function public.leave_chat(text)               from public, anon;
@@ -534,6 +592,7 @@ revoke all on function public.delete_account()               from public, anon;
 revoke all on function public.purge_old()                    from public, anon;
 grant execute on function public.me()                        to authenticated;
 grant execute on function public.get_pubs(text[])            to authenticated;
+grant execute on function public.accept_chat(text)           to authenticated;
 grant execute on function public.block_user(text)            to authenticated;
 grant execute on function public.unblock_all()               to authenticated;
 grant execute on function public.leave_chat(text)            to authenticated;
