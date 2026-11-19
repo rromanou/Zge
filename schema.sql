@@ -261,12 +261,12 @@ declare
   acc text[];
   c   int;
 begin
-  -- le destinataire a bloqué l'expéditeur : le message est jeté sans erreur
+  -- verrou du destinataire : même verrou que block_user(), les envois et les blocages passent donc un par un
+  perform pg_advisory_xact_lock(hashtextextended('inbox:' || new.to_id, 0));
+  -- le destinataire a bloqué l'expéditeur (vérifié sous le verrou, donc après tout blocage déjà engagé) : message jeté sans erreur
   if public._blocked(new.to_id, new.from_id) then
     return null;
   end if;
-  -- les écritures vers un même destinataire passent une par une : les comptes ci-dessous restent exacts
-  perform pg_advisory_xact_lock(hashtextextended('inbox:' || new.to_id, 0));
   if (select count(*) from public.messages where from_id = new.from_id and created_at > now() - interval '1 minute') >= 1500 then
     raise exception 'rate limit';
   end if;
@@ -298,6 +298,8 @@ end $$;
 create or replace function public._limit_offers() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
+  -- même verrou du destinataire que pour les messages et le blocage
+  perform pg_advisory_xact_lock(hashtextextended('inbox:' || new.to_id, 0));
   if public._blocked(new.to_id, new.from_id) then
     return null;
   end if;
@@ -318,6 +320,12 @@ begin
     raise exception 'denied';
   end if;
   perform pg_advisory_xact_lock(hashtextextended('chats:' || v, 0));
+  -- verrou sur chaque destinataire (ordre croissant : pas d'interblocage) : la limite de demandes en attente ne peut pas être dépassée en parallèle
+  for o in select distinct x from unnest(new.members) x order by x loop
+    if o <> v then
+      perform pg_advisory_xact_lock(hashtextextended('reqchats:' || o, 0));
+    end if;
+  end loop;
   -- l'auteur est toujours le compte connecté, jamais une valeur choisie par le client ; il a accepté d'office
   new.creator  := v;
   new.accepted := array[v];
@@ -332,7 +340,6 @@ begin
       if public._blocked(o, v) then
         raise exception 'denied';
       end if;
-      -- une personne ne peut pas recevoir une avalanche de demandes de conversation en attente
       if (select count(*) from public.chats where o = any(members) and not (o = any(accepted))) >= 200 then
         raise exception 'denied';
       end if;
@@ -426,6 +433,10 @@ begin
   if (select count(*) from public.blocks where owner = v) >= 500 then
     return;
   end if;
+  -- mêmes verrous que les envois vers moi (messages, clés) et les demandes de conversation :
+  -- ce qui est déjà engagé se termine avant le blocage, et tout ce qui arrive après voit le blocage
+  perform pg_advisory_xact_lock(hashtextextended('inbox:' || v, 0));
+  perform pg_advisory_xact_lock(hashtextextended('reqchats:' || v, 0));
   insert into public.blocks (owner, blocked) values (v, p_id) on conflict do nothing;
   delete from public.messages   where to_id = v and from_id = p_id;
   delete from public.key_offers where to_id = v and from_id = p_id;
