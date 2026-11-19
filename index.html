@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-U6x5x1Kp7XX1bwxzGXwVeHfttRlLxcwUrf85IP6Hwgw='; style-src 'sha256-JjqFjgFCphiIg26nZzBrvHVE/XAqxI0cSJ0qimpCPXI='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-rR+ExhrvTf8ccWeEHzjmgV0mBphBRR3Nz05v9iMpmuU='; style-src 'sha256-EywsH6qnxy6xWR0x5/pjHCpCZHoo6hxfhG9sp50dWbo='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
 <meta name="google" content="notranslate">
@@ -24,6 +24,8 @@ button:hover{background:#eee}
 .v .t{font-size:22px;font-weight:normal;letter-spacing:1px}
 .v .n{font-size:22px;letter-spacing:1px}
 .err{color:#555;min-height:1.4em}
+.stay{display:flex;gap:8px;align-items:center}
+#staywarn{font-size:12px;border:1px solid #000;padding:6px}
 .sub{color:#555}
 #app{height:100%;display:grid;grid-template-columns:260px 1fr}
 aside{border-right:1px solid #999;display:flex;flex-direction:column;min-height:0}
@@ -59,8 +61,8 @@ aside header button,#conv header button{padding:4px 10px}
 .doc ul{padding-left:20px}
 #srcv{white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.4;border:1px solid #999;padding:8px;margin:8px 0}
 #conv header>span:last-child{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
-#rq{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #999}
-#rq span{flex:1}
+#rq,#uv{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #999}
+#rq span,#uv span{flex:1}
 #qrv{position:fixed;inset:0;z-index:20;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
 .qh{font-size:18px;letter-spacing:1px}
 #qrc{max-width:90vw;max-height:60vh;width:auto;height:auto;border:1px solid #000}
@@ -104,6 +106,8 @@ aside header button,#conv header button{padding:4px 10px}
  <form id="fl">
   <input id="n" placeholder="+000000000" inputmode="numeric" autocomplete="username">
   <input id="p" type="password" maxlength="40" placeholder="password" autocomplete="current-password">
+  <label class="stay"><input id="stay" type="checkbox"> Stay signed in</label>
+  <div id="staywarn">DANGER: anyone who can use this device or browser will open your chats without a password. Never use this on a shared or public computer.</div>
   <button>Enter</button>
   <button type="button" class="lk lg">隐私与条款 · Privacy &amp; Terms</button>
   <div class="err"></div>
@@ -121,7 +125,7 @@ aside header button,#conv header button{padding:4px 10px}
 <main id="legal" class="doc" lang="zh-Hans" hidden>
 <button type="button" id="lg-back" class="lk">← 返回 / Back</button>
 <h1>Zge 隐私、透明度和使用条款（大白话版）</h1>
-<p class="sub">最后更新：2026年11月18日。这页是用大白话写的，没绕弯子，没藏着掖着。看不懂的地方，宁可多看两遍，也别瞎猜。</p>
+<p class="sub">最后更新：2026年11月19日。这页是用大白话写的，没绕弯子，没藏着掖着。看不懂的地方，宁可多看两遍，也别瞎猜。</p>
 
 <h2>一、先说重点（懒得看全文的，看这一段就行）</h2>
 <ul>
@@ -147,7 +151,8 @@ aside header button,#conv header button{padding:4px 10px}
 <li>底层用的是 Supabase 的登录系统。它需要一个“邮箱”字段，所以我们塞进去一个假的：你的号码@zge.local。这个地址不是真的，不会给你发任何邮件。</li>
 <li>登录的时候，你的密码会通过加密连接（HTTPS）发到 Supabase 去验证，服务器那边存的是哈希，不是明文。说白了：密码不是“端到端”的，它得过一下 Supabase。这点必须跟你讲清楚。</li>
 <li>没有“忘记密码”这个功能。没有邮箱，没有手机，没有客服能帮你重置。号码记不住就抄在本子上，密码丢了，账号就等于丢了。</li>
-<li>登录状态只放在内存里，不写进浏览器的硬盘。所以刷新页面、关掉标签页，就要重新登录。</li>
+<li>默认情况下，登录状态只放在内存里，不写进浏览器的硬盘。所以刷新页面、关掉标签页，就要重新登录。</li>
+<li>登录页有个可选项“Stay signed in”（保持登录）。勾上以后，下次打开网站就直接进去了，不用再输密码。但是这很危险：谁能用你的这台设备、这个浏览器，谁就能直接打开你的聊天、用你的账号，不需要密码。所以只能在只有你自己用的设备上开。我们给了这个选项，但明明白白告诉你：不建议。勾选时会弹窗再警告一次，随时能在菜单里关掉；一登出、抹除设备或删账号，这个记录就会被删除。</li>
 <li>登录输错了会有等待时间，错得越多等得越久。服务器那边 Supabase 本身也有限流。</li>
 </ul>
 
@@ -196,10 +201,11 @@ aside header button,#conv header button{padding:4px 10px}
 <h2>八、你设备上存了啥</h2>
 <ul>
 <li>聊天钥匙、你的私钥、已经信任的对方钥匙指纹、所有消息、联系人备注名，全都存在你浏览器的本地存储里，而且是加密存的。</li>
-<li>加密用的是一把随机的“保险箱钥匙”，这把钥匙又被你的密码锁着（用密码算出来的，算了60万轮，就是为了让别人猜密码变得很慢）。保险箱钥匙只放在内存里。</li>
+<li>加密用的是一把随机的“保险箱钥匙”，这把钥匙又被你的密码锁着（用密码算出来的，算了60万轮，就是为了让别人猜密码变得很慢）。默认情况下，保险箱钥匙只放在内存里。只有你打开了“保持登录”，保险箱钥匙和登录令牌才会存进这个浏览器（IndexedDB）里，其中登录令牌用一把导不出来的设备钥匙加密过，但这不能挡住能直接用你浏览器的人。</li>
 <li>图片、视频、文件放在浏览器的另一块存储（IndexedDB）里，同样是加密的。</li>
 <li>实话实说，有两样东西没加密：一是你上次登录的号码，用来帮你自动填号码；二是本地存储项的“名字”，里面带着你的号码和聊天编码。也就是说，有人能翻你的浏览器，能看出你有哪些聊天，但看不到内容。</li>
-<li>五分钟没动静，系统自动把你登出，保险箱也就跟着锁上了。切到别的标签页回来时，如果已经过了五分钟也一样。</li>
+<li>五分钟没动静，系统自动把你登出，保险箱也就跟着锁上了。切到别的标签页回来时，如果已经过了五分钟也一样。例外：开了“保持登录”的话，自动登出就不会触发。</li>
+<li>永远不要把本地存储（localStorage）、IndexedDB 或会话里的任何内容分享给别人，也别贴到任何地方。那里面是你聊天和账号的钥匙。网站的控制台和本地存储里，我们都用英文放了同样的警告。Zge 的人绝对不会向你要这些东西，谁要，谁就是骗子。</li>
 <li>没有云备份，没有同步。清掉浏览器数据、换电脑、换浏览器，聊天记录就没了，而且找不回来。想留着，自己想办法。</li>
 <li>我们不用 Cookie，不用任何统计、广告、跟踪。</li>
 </ul>
@@ -209,6 +215,9 @@ aside header button,#conv header button{padding:4px 10px}
 <li>第一次见到某个号码的公钥时，系统默认信任它并记下指纹（先到先得）。这个设计有个软肋：如果服务器在你第一次查的时候就给了你一把假钥匙，你是发现不了的。</li>
 <li>所以，重要的聊天，请点聊天顶上的“#”按钮，会出来一串安全号码。你和对方用别的渠道（当面、打电话）对一对，两边一模一样才算数。</li>
 <li>聊天顶上会写着“unverified”（还没核对）或者一个“✓”（核对过了）。核对完以后，系统会问你“对上了没有”，你点确认才会变成“✓”。对方的钥匙一变，“✓”就自动没了，得重新核对。没核对的聊天，别拿来说要命的事。</li>
+<li>没核对的聊天，顶上还有一条“Key not verified”的提示条，旁边有个“Verify”按钮，点一下就会出安全号码。</li>
+<li>菜单里有个“Strict mode”（严格模式）：打开以后，没核对过的聊天不让你发消息和文件，只能收，逼你先核对。默认是关的，想认真保护自己就把它打开。</li>
+<li>说实话：只要你没有当面或者换个渠道核对过，第一次拿到的钥匙就只能“先信了再说”。要是有人在你第一次查对方钥匙的那一下就偷换了，你自己是发现不了的，只有核对安全号码才能发现。很多同类应用也是这么回事，没有哪个办法能绕开“第一次得信一回”。</li>
 <li>以后要是对方的钥匙变了（比如对方重装了），系统会弹窗问你信不信新钥匙。别手滑点“确定”，先去核对安全号码。</li>
 </ul>
 
@@ -247,8 +256,9 @@ aside header button,#conv header button{padding:4px 10px}
 <li>每个聊天只能拉真实存在的、不重复的号码，被对方拉黑的号码拉不进来。</li>
 <li>陌生人开的聊天，要你点“Accept”才算数（或者你自己回一句，也算接受）。你接受之前，对方最多只能给你发5条，而且发不了文件；你还会看到一条“Chat request”的提示，可以点“Decline”拒绝。同一个人最多让400条消息在你的收件箱里排队；同时挂着的未处理聊天请求最多200个。</li>
 <li>往同一个收件人写东西是一条一条排队处理的，所以上面这些计数不会被“同时发一大堆请求”给绕过去。</li>
+<li>拉黑、发消息、发钥匙用的是同一把“按收件人”的锁：拉黑一生效，还在路上的消息和钥匙也会被丢掉。好几个人同时给同一个人开聊天请求，也是按收件人一个一个排队算的，超不过200个的上限。</li>
 <li>你的号码必须和账号绑定，注册之后不能改，也不能抢别人的号码。</li>
-<li>网页里把浏览器自带的右键菜单关掉了：在页面上右键，不会再弹出浏览器那个带“检查”的菜单；在消息上右键（手机上长按），弹出来的是 Zge 自己的消息菜单。F12、Ctrl+Shift+I、Ctrl+Shift+J、Ctrl+Shift+C（苹果电脑上是 Cmd+Option+I/J/C）这些打开开发者工具的快捷键也被拦了。</li>
+<li>网页里把浏览器自带的右键菜单关掉了：在页面上右键，不会再弹出浏览器那个带“检查”的菜单；在消息上右键（手机上长按），弹出来的是 Zge 自己的消息菜单。在能打字的输入框上右键，弹出来的只有一项“Paste”（粘贴），用来粘贴你复制好的文字。F12、Ctrl+Shift+I、Ctrl+Shift+J、Ctrl+Shift+C（苹果电脑上是 Cmd+Option+I/J/C）这些打开开发者工具的快捷键也被拦了。</li>
 <li>数据库对每个请求设了最长执行时间，太重的请求会被直接掐掉。</li>
 <li>网页自己也会“让着点”服务器：连不上的时候越等越久再重试，页面在后台时降低刷新频率，发消息和开聊天都有最小间隔，本地每个聊天最多存最近2000条。</li>
 <li>收到发给你、但你没有对应钥匙的消息，一小时后会被直接丢掉，不会一直堆着。</li>
@@ -303,6 +313,8 @@ aside header button,#conv header button{padding:4px 10px}
   <div id="menu" hidden>
    <button id="m-cts">Contacts</button>
    <button id="m-unb">Unblock all</button>
+   <button id="m-strict">Strict mode: off</button>
+   <button id="m-stay">Stay signed in: off</button>
    <button id="m-cache">Clear cache</button>
    <button id="m-dev">Erase device</button>
    <button id="m-acc">Delete account</button>
@@ -326,6 +338,7 @@ aside header button,#conv header button{padding:4px 10px}
    <span><button id="qr">QR</button> <button id="sn">#</button> <button id="bk">⊘</button> <button id="ed">✎</button> <button id="clr">Clear</button> <button id="rm">Delete</button></span>
   </header>
   <div id="rq" hidden><span>Chat request</span><button type="button" id="ra">Accept</button><button type="button" id="rd">Decline</button></div>
+  <div id="uv" hidden><span>Key not verified</span><button type="button" id="uvb">Verify</button></div>
   <div id="msgs"></div>
   <form id="sf">
    <button type="button" id="att">+</button>
@@ -389,8 +402,8 @@ const padText=s=>{
 /* ---------- local file storage (IndexedDB, always encrypted) ---------- */
 let dbp;
 const db=()=>dbp||(dbp=new Promise((res,rej)=>{
- const r=indexedDB.open('zge2',1);
- r.onupgradeneeded=()=>{r.result.createObjectStore('files');r.result.createObjectStore('chunks')};
+ const r=indexedDB.open('zge2',2);
+ r.onupgradeneeded=()=>{for(const n of['files','chunks','sess'])if(!r.result.objectStoreNames.contains(n))r.result.createObjectStore(n)};
  r.onsuccess=()=>res(r.result);
  r.onerror=()=>rej(r.error);
 }));
@@ -433,7 +446,7 @@ let me=null,ident=null,store=null,M={},DK=null,chats=[],cur=null;
 let busy=false,again=false,entered=false,sending=false,sig='',stick=true;
 let nt,idleT,lastAct=Date.now(),fails=0,lockUntil=0,failN=0,lastSync=0,lastSend=0,lastStart=0,kickT,pollT,qrT;
 const unread=new Set(),keyCache=new Map(),urls=new Map(),declined=new Set();
-let wq=Promise.resolve();
+let wq=Promise.resolve(),stay=false;
 const queue=f=>{wq=wq.then(f).catch(()=>{})};
 
 /* ---------- encrypted local vault ----------
@@ -479,11 +492,12 @@ async function lsGet(name){
  }catch{return undefined}
 }
 async function loadStore(){
- const id=await lsGet('id'),k=await lsGet('k'),p=await lsGet('p'),c=await lsGet('c'),x=await lsGet('x'),vv=await lsGet('v');
+ const id=await lsGet('id'),k=await lsGet('k'),p=await lsGet('p'),c=await lsGet('c'),x=await lsGet('x'),vv=await lsGet('v'),st=await lsGet('s');
  store={id:id||null,keys:k&&typeof k==='object'?k:{},pins:p&&typeof p==='object'?p:{},
   cts:{c:c&&c.c&&typeof c.c==='object'?c.c:{},t:c&&c.t&&typeof c.t==='object'?c.t:{}},
   dead:x&&typeof x==='object'?x:{},
-  ver:vv&&typeof vv==='object'?vv:{}};
+  ver:vv&&typeof vv==='object'?vv:{},
+  strict:!!(st&&st.strict)};
  // chat keys are {k: current key, e: version, o: older keys}
  for(const[cid,v]of Object.entries(store.keys)){
   if(typeof v==='string')store.keys[cid]={k:v,e:1,o:[]};
@@ -504,6 +518,7 @@ const saveKeys=()=>queue(()=>lsSet('k',store.keys));
 const savePins=()=>queue(()=>lsSet('p',store.pins));
 const saveCts=()=>queue(()=>lsSet('c',store.cts));
 const saveVer=()=>queue(()=>lsSet('v',store.ver));
+const saveStrict=()=>queue(()=>lsSet('s',{strict:store.strict}));
 const saveDead=()=>queue(()=>lsSet('x',store.dead));
 const saveMsgs=id=>queue(()=>M[id]?lsSet('m:'+id,M[id]):0);
 const setKey=(id,raw,e)=>{store.keys[id]={k:raw,e:e||1,o:[]};saveKeys()};
@@ -599,6 +614,7 @@ async function showSafety(){
   for(const o of others(c))if(store.pins[o])store.ver[o]=store.pins[o];
   saveVer();
   $('#who').textContent=whoText(c);
+  refreshInput();
  }
 }
 
@@ -664,6 +680,8 @@ async function login(){
  if(Date.now()<lockUntil)return err('Wait a moment');
  const id=digits($('#n').value),p=$('#p').value;
  if(id.length!==9||!pwOk(p))return fail();
+ const wantStay=$('#stay').checked;
+ if(wantStay&&!confirm('DANGER: Stay signed in is NOT safe.\n\nAnyone who can open this browser will read your chats and use your account without the password. Only use it on a device that only you control.\n\nStay signed in anyway?'))return;
  err('');
  const{error}=await sb.auth.signInWithPassword({email:id+DOMAIN,password:p});
  if(error)return fail();
@@ -689,7 +707,66 @@ async function login(){
  }
  $('#p').value='';
  try{localStorage.setItem(P+'last',id)}catch{}
+ if(wantStay)await setStay(true);
+ $('#stay').checked=false;
  enter();
+}
+
+/* ---------- stay signed in (optional, less safe) ----------
+   When the user turns this on, the vault key and the login tokens are kept in IndexedDB
+   so the next visit opens directly. Anyone with access to this browser profile can then
+   open the chats. The tokens are encrypted with a device key that cannot be exported. */
+const WARN='WARNING: NEVER share, copy, screenshot or paste anything from this browser storage (localStorage / IndexedDB / sessions). Whoever has it can read your chats and use your account. Zge staff will NEVER ask for it.';
+async function saveStay(sess){
+ if(!stay||!me||!DK||!sess)return;
+ try{
+  let rec=null;
+  try{rec=await idb('sess','readonly',s=>s.get('cur'))}catch{}
+  const dev=rec&&rec.id===me&&rec.dev?rec.dev:await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  const iv=rnd(12);
+  const d=await crypto.subtle.encrypt({name:'AES-GCM',iv},dev,enc.encode(JSON.stringify({a:sess.access_token,r:sess.refresh_token})));
+  await idb('sess','readwrite',s=>s.put({id:me,dk:DK,dev,iv,d,warn:WARN},'cur'));
+ }catch{}
+}
+async function delStay(){try{await idb('sess','readwrite',s=>s.delete('cur'))}catch{}}
+async function setStay(on){
+ if(on){
+  const{data}=await sb.auth.getSession();
+  if(!data||!data.session)return false;
+  stay=true;
+  await saveStay(data.session);
+ }else{
+  stay=false;
+  await delStay();
+  bump();
+ }
+ $('#m-stay').textContent='Stay signed in: '+(stay?'on':'off');
+ return true;
+}
+sb.auth.onAuthStateChange((ev,sess)=>{if(stay&&sess&&(ev==='TOKEN_REFRESHED'||ev==='SIGNED_IN'))saveStay(sess)});
+async function restoreStay(l){
+ let rec=null;
+ try{rec=await idb('sess','readonly',s=>s.get('cur'))}catch{}
+ if(!rec)return false;
+ try{
+  if(rec.id!==l||!NUM9.test(l)||!rec.dk||!rec.dev)throw 0;
+  const t=JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:rec.iv},rec.dev,rec.d)));
+  const{data,error}=await sb.auth.setSession({access_token:t.a,refresh_token:t.r});
+  if(error||!data.session||data.session.user.email!==l+DOMAIN)throw 0;
+  me=l;DK=rec.dk;
+  await loadStore();
+  if(!store.id||!store.id.priv||!validPub(store.id.pub))throw 0;
+  ident=store.id;
+  stay=true;
+  await saveStay(data.session);
+  $('#m-stay').textContent='Stay signed in: on';
+  return true;
+ }catch{
+  me=null;DK=null;store=null;ident=null;
+  await delStay();
+  try{await sb.auth.signOut({scope:'local'})}catch{}
+  return false;
+ }
 }
 async function enter(){
  if(entered)return;
@@ -717,12 +794,14 @@ function poll(){
 }
 async function leaveDevice(){
  hideQR();
+ stay=false;
+ await delStay();
  try{await sb.auth.signOut({scope:'local'})}catch{}
  location.reload();
 }
 // auto-lock: the keys only live in memory, so reloading locks everything
 function bump(){lastAct=Date.now();clearTimeout(idleT);idleT=setTimeout(lock,IDLE)}
-function lock(){if(sending){bump();return}leaveDevice()}
+function lock(){if(stay)return;if(sending){bump();return}leaveDevice()}
 
 /* ---------- sync ---------- */
 async function applyNotice(n){
@@ -885,6 +964,7 @@ async function post(c,p){
 async function sendText(t){
  const c=chats.find(x=>x.id===cur);
  if(!c||!t)return;
+ if(store.strict&&!verified(c))return note('Verify first (#)');
  if(Date.now()-lastSend<250)return note('Slow down');
  lastSend=Date.now();
  const ts=Date.now(),i=hex(rnd(8));
@@ -937,6 +1017,7 @@ async function sendFile(c,f){
 async function sendFiles(list){
  const c=chats.find(x=>x.id===cur);
  if(!c||sending)return;
+ if(store.strict&&!verified(c))return note('Verify first (#)');
  sending=true;
  try{for(const f of list)await sendFile(c,f)}catch{note('Error')}
  sending=false;
@@ -1011,9 +1092,13 @@ function refreshInput(){
  const on=!!(cur&&keys()[cur]);
  const cc=chats.find(x=>x.id===cur);
  $('#rq').hidden=!(cc&&!cc.acc.includes(me));
- $('#tx').disabled=!on;
- $('#att').disabled=!on;
- $('#go').disabled=!on;
+ const unver=!!(cc&&!verified(cc)),stop=!on||(store.strict&&unver);
+ $('#uv').hidden=!unver;
+ $('#m-strict').textContent='Strict mode: '+(store.strict?'on':'off');
+ $('#tx').disabled=stop;
+ $('#att').disabled=stop;
+ $('#go').disabled=stop;
+ if(!sending)$('#tx').placeholder=store.strict&&unver?'Verify first (#)':'';
 }
 async function clearChat(){
  const c=chats.find(x=>x.id===cur);
@@ -1152,6 +1237,11 @@ $('#m-acc').onclick=async()=>{
  leaveDevice();
 };
 $('#m-out').onclick=leaveDevice;
+$('#m-stay').onclick=async()=>{
+ $('#menu').hidden=true;
+ if(!stay&&!confirm('DANGER: Stay signed in is NOT safe.\n\nAnyone who can open this browser will read your chats and use your account without the password. Only use it on a device that only you control.\n\nTurn it on anyway?'))return;
+ if(!await setStay(!stay))note('Error');
+};
 ['pointerdown','keydown','touchstart','wheel'].forEach(e=>addEventListener(e,()=>{if(entered)bump()},{passive:true,capture:true}));
 document.addEventListener('visibilitychange',()=>{
  document.documentElement.classList.toggle('hid',document.hidden);
@@ -1307,6 +1397,13 @@ $('#ra').onclick=async()=>{
  await sync();
 };
 $('#rd').onclick=()=>removeChat();
+$('#uvb').onclick=()=>showSafety();
+$('#m-strict').onclick=()=>{
+ $('#menu').hidden=true;
+ store.strict=!store.strict;
+ saveStrict();
+ refreshInput();
+};
 
 /* ---------- block ---------- */
 $('#bk').onclick=async()=>{
@@ -1332,16 +1429,34 @@ $('#m-unb').onclick=async()=>{
 /* ---------- right-click menu: delete a message ---------- */
 let lp;
 const hideMenu=()=>{$('#cm').hidden=true};
-function menuFor(x,y,m){
+function showMenu(x,y,items){
  const cm=$('#cm');
  cm.textContent='';
- const add=(t,f)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{hideMenu();f()};cm.append(b)};
- if(m.k==='t')add('Copy',()=>{try{navigator.clipboard.writeText(String(m.t)).catch(()=>{})}catch{}});
- add('Delete for me',()=>delMsg(m,false));
- if(m.f===me)add('Delete for everyone',()=>delMsg(m,true));
+ for(const[t,f]of items){const b=document.createElement('button');b.textContent=t;b.onclick=()=>{hideMenu();f()};cm.append(b)}
  cm.hidden=false;
  cm.style.left=Math.max(4,Math.min(x,innerWidth-cm.offsetWidth-4))+'px';
  cm.style.top=Math.max(4,Math.min(y,innerHeight-cm.offsetHeight-4))+'px';
+}
+function menuFor(x,y,m){
+ const items=[],add=(t,f)=>items.push([t,f]);
+ if(m.k==='t')add('Copy',()=>{try{navigator.clipboard.writeText(String(m.t)).catch(()=>{})}catch{}});
+ add('Delete for me',()=>delMsg(m,false));
+ if(m.f===me)add('Delete for everyone',()=>delMsg(m,true));
+ showMenu(x,y,items);
+}
+// text fields: the menu has a Paste entry for what the person copied
+const editable=t=>!!t&&!!t.matches&&t.matches('input,textarea')&&!t.disabled&&!t.readOnly
+ &&!['file','checkbox','radio','button','submit','reset','hidden','image','range','color'].includes((t.type||'').toLowerCase());
+async function pasteInto(t){
+ let txt='';
+ try{txt=await navigator.clipboard.readText()}catch{alert('The browser blocked paste. Use Ctrl+V.');return}
+ if(!txt)return;
+ if(t.tagName==='INPUT')txt=txt.replace(/[\r\n]+/g,' ');
+ t.focus();
+ const a=t.selectionStart==null?t.value.length:t.selectionStart,b=t.selectionEnd==null?a:t.selectionEnd;
+ if(t.maxLength>0)txt=txt.slice(0,Math.max(0,t.maxLength-(t.value.length-(b-a))));
+ t.setRangeText(txt,a,b,'end');
+ t.dispatchEvent(new Event('input',{bubbles:true}));
 }
 async function delMsg(m,all){
  const c=chats.find(x=>x.id===cur);
@@ -1355,7 +1470,12 @@ async function delMsg(m,all){
  renderMsgs();
 }
 // the browser's own right-click menu (which has "Inspect") is disabled; on a message the site's own menu opens instead
-if(BLOCK_DEVTOOLS)addEventListener('contextmenu',e=>e.preventDefault(),true);
+if(BLOCK_DEVTOOLS)addEventListener('contextmenu',e=>{
+ e.preventDefault();
+ hideMenu();
+ const t=e.target;
+ if(editable(t)){t.focus();showMenu(e.clientX,e.clientY,[['Paste',()=>pasteInto(t)]])}
+},true);
 // shortcuts that open the developer tools: F12, Ctrl/Cmd+Shift+I/J/C, Cmd+Option+I/J/C
 if(BLOCK_DEVTOOLS)addEventListener('keydown',e=>{
  const dev=['KeyI','KeyJ','KeyC'].includes(e.code);
@@ -1439,10 +1559,20 @@ async function toggleSrc(){
 $('#src').onclick=toggleSrc;
 $('#src2').onclick=toggleSrc;
 
-(()=>{
+// warnings for anyone who opens the console or the storage viewer
+try{
+ console.log('%cSTOP!','color:#c00;font-size:42px;font-weight:bold');
+ console.log('%cNEVER share, copy or paste anything from this site\'s local storage, IndexedDB or session data anywhere. It contains the keys to your chats and your account. Anyone who asks you to paste something here is trying to steal your account. Zge staff will NEVER ask for it.','font-size:15px');
+ console.warn('Zge: never share the data of the local storage.');
+}catch{}
+try{localStorage.setItem('!! WARNING !!',WARN)}catch{}
+(async()=>{
  let l=null;
  try{l=localStorage.getItem(P+'last')}catch{}
- if(l&&NUM9.test(l))$('#n').value='+'+l;
+ if(l&&NUM9.test(l)){
+  $('#n').value='+'+l;
+  if(await restoreStay(l)){enter();return}
+ }
  show(l?'login':'home');
 })();
 </script>
