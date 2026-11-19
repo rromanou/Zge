@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'none'; script-src 'self' 'sha256-U6x5x1Kp7XX1bwxzGXwVeHfttRlLxcwUrf85IP6Hwgw='; style-src 'sha256-JjqFjgFCphiIg26nZzBrvHVE/XAqxI0cSJ0qimpCPXI='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'sha256-rR+ExhrvTf8ccWeEHzjmgV0mBphBRR3Nz05v9iMpmuU='; style-src 'sha256-EywsH6qnxy6xWR0x5/pjHCpCZHoo6hxfhG9sp50dWbo='; connect-src 'self' https://taewxhmkivlmromyeslx.supabase.co wss://taewxhmkivlmromyeslx.supabase.co; img-src blob:; media-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests; frame-ancestors 'none'
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
